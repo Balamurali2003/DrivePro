@@ -142,9 +142,18 @@ export const LeadsPage: React.FC = () => {
   const [statusInfoModal, setStatusInfoModal] = useState<{ lead: Lead; statusDef: StatusDefinition } | null>(null);
   const [copiedMessage, setCopiedMessage] = useState(false);
 
-  // Bulk Excel Import Modal State
+  // Reset Leads Data Modal State
+  const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
+  const [resettingLeads, setResettingLeads] = useState(false);
+
+  // Bulk Excel Import Multi-Step Wizard State
   const [showImportModal, setShowImportModal] = useState(false);
+  const [importStep, setImportStep] = useState<'upload' | 'mapping' | 'preview' | 'complete'>('upload');
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [uploadedColumns, setUploadedColumns] = useState<string[]>([]);
+  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
+  const [rawUploadedRows, setRawUploadedRows] = useState<any[]>([]);
+  const [previewFilterTab, setPreviewFilterTab] = useState<'ALL' | 'VALID' | 'DUPLICATES' | 'INVALID'>('ALL');
   const [importPreviewRows, setImportPreviewRows] = useState<any[]>([]);
   const [validationSummary, setValidationSummary] = useState<{
     total: number;
@@ -154,7 +163,7 @@ export const LeadsPage: React.FC = () => {
     unknownStaffCount?: number;
     unknownStaffNames?: string[];
     invalidRows: Array<{ rowNum: number; error: string; data: any }>;
-    duplicateRows: Array<{ rowNum: number; phone: string; data: any }>;
+    duplicateRows: Array<{ rowNum: number; phone: string; data: any; reason?: string }>;
     validRows: any[];
   } | null>(null);
   const [importMode, setImportMode] = useState<'import_valid' | 'skip_duplicates' | 'update_duplicates'>('import_valid');
@@ -573,6 +582,64 @@ export const LeadsPage: React.FC = () => {
     toast.success("Excel template downloaded with Sheet 1 (Template) & Sheet 2 (Staff List reference)!");
   };
 
+  const CRM_MAPPING_FIELDS = [
+    { key: 'SKIP', label: '— Skip this column —' },
+    { key: 'fullName', label: 'Lead Name / Full Name *', required: true },
+    { key: 'phone', label: 'Mobile / Phone Number *', required: true },
+    { key: 'location', label: 'Location / City / Address' },
+    { key: 'area', label: 'Area / Locality' },
+    { key: 'email', label: 'Email Address' },
+    { key: 'leadSource', label: 'Lead Source' },
+    { key: 'campaign', label: 'Campaign Name' },
+    { key: 'interestedVehicle', label: 'Interested Vehicle / Car' },
+    { key: 'trainingRequirement', label: 'Training Requirement / Course' },
+    { key: 'classPreference', label: 'Class Preference / Batch' },
+    { key: 'status', label: 'Status' },
+    { key: 'priority', label: 'Priority' },
+    { key: 'assignedTo', label: 'Assigned Staff / Counselor' },
+    { key: 'nextFollowUpAt', label: 'Next Follow-up Date' },
+    { key: 'expectedJoiningDate', label: 'Expected Joining Date' },
+    { key: 'notes', label: 'Notes / Remarks' },
+  ];
+
+  const autoDetectField = (colName: string): string => {
+    const c = colName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (c.includes('name') || c.includes('candidate') || c.includes('client') || c.includes('student')) return 'fullName';
+    if (c.includes('phone') || c.includes('mobile') || c.includes('contact') || c.includes('cell') || c.includes('call')) return 'phone';
+    if (c.includes('mail')) return 'email';
+    if (c.includes('city') || c.includes('location') || c.includes('address') || c.includes('loc') || c.includes('addr')) return 'location';
+    if (c.includes('area')) return 'area';
+    if (c.includes('source')) return 'leadSource';
+    if (c.includes('status')) return 'status';
+    if (c.includes('camp')) return 'campaign';
+    if (c.includes('vehicle') || c.includes('car') || c.includes('model')) return 'interestedVehicle';
+    if (c.includes('train') || c.includes('course') || c.includes('req')) return 'trainingRequirement';
+    if (c.includes('class') || c.includes('batch') || c.includes('timing') || c.includes('sched')) return 'classPreference';
+    if (c.includes('prior')) return 'priority';
+    if (c.includes('staff') || c.includes('assign') || c.includes('agent') || c.includes('counselor')) return 'assignedTo';
+    if (c.includes('follow')) return 'nextFollowUpAt';
+    if (c.includes('join')) return 'expectedJoiningDate';
+    if (c.includes('note') || c.includes('remark') || c.includes('comment') || c.includes('feed')) return 'notes';
+    return 'SKIP';
+  };
+
+  // Safe Leads Data Reset Handler
+  const handleResetLeadsData = async () => {
+    try {
+      setResettingLeads(true);
+      const res = await api.resetLeadsData();
+      toast.success(res.message || 'All existing lead data has been removed successfully.');
+      setShowResetConfirmModal(false);
+      setLeads([]);
+      fetchLeads();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to reset lead data');
+    } finally {
+      setResettingLeads(false);
+    }
+  };
+
+  // Step 1: File Upload Handler
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -586,81 +653,45 @@ export const LeadsPage: React.FC = () => {
         const wb = XLSX.read(buffer, { type: 'array' });
         const sheetName = wb.SheetNames[0];
         const ws = wb.Sheets[sheetName];
-        const rawData: any[] = XLSX.utils.sheet_to_json(ws);
+        const rawData: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
         if (rawData.length === 0) {
           toast.error("Uploaded file is empty.");
           return;
         }
 
-        setImportPreviewRows(rawData);
+        setRawUploadedRows(rawData);
 
-        // Run validation against existing leads
-        const existingPhones = new Set(
-          leads.map(l => l.phone.replace(/\D/g, '').slice(-10)).filter(Boolean)
-        );
-
-        // Prepare set of known staff for lookup
-        const knownStaffIds = new Set(staffUsers.map(u => u.id));
-        const knownStaffExact = new Set(staffUsers.map(u => u.name.trim().toLowerCase()));
-        const knownStaffNorm = new Set(staffUsers.map(u => u.name.replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase()));
-
-        const seenInFile = new Set<string>();
-        const invalidRows: Array<{ rowNum: number; error: string; data: any }> = [];
-        const duplicateRows: Array<{ rowNum: number; phone: string; data: any }> = [];
-        const validRows: any[] = [];
-        const unknownStaffSet = new Set<string>();
-
-        rawData.forEach((row, idx) => {
-          const rowNum = idx + 2; // header is row 1
-          const name = String(row.Name || row.fullName || row.name || '').trim();
-          const phone = String(row.Phone || row.phone || '').trim();
-          const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-
-          // Check Assigned To
-          const rawAssigned = String(row['Assigned To'] || row.assignedTo || row.AssignedTo || row.staffMember || '').trim();
-          if (rawAssigned && rawAssigned.toLowerCase() !== 'unassigned' && rawAssigned !== '-') {
-            const cleanAssigned = rawAssigned.replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase();
-            const matched = knownStaffIds.has(rawAssigned) ||
-                            knownStaffExact.has(rawAssigned.toLowerCase()) ||
-                            knownStaffNorm.has(cleanAssigned);
-            if (!matched) {
-              unknownStaffSet.add(rawAssigned);
+        // Detect all unique columns
+        const detectedCols: string[] = [];
+        rawData.forEach(row => {
+          Object.keys(row).forEach(k => {
+            const trimmed = k.trim();
+            if (trimmed && !detectedCols.includes(trimmed)) {
+              detectedCols.push(trimmed);
             }
-          }
+          });
+        });
 
-          if (!name) {
-            invalidRows.push({ rowNum, error: 'Name is required', data: row });
-          } else if (!phone || cleanPhone.length < 8) {
-            invalidRows.push({ rowNum, error: 'Phone number is required and must be valid', data: row });
-          } else if (existingPhones.has(cleanPhone) || seenInFile.has(cleanPhone)) {
-            duplicateRows.push({ rowNum, phone: cleanPhone, data: row });
-            seenInFile.add(cleanPhone);
-            validRows.push(row); // Can be updated or skipped based on user choice
+        setUploadedColumns(detectedCols);
+
+        // Auto-detect and suggest column mappings
+        const initialMapping: Record<string, string> = {};
+        const usedCrmKeys = new Set<string>();
+
+        detectedCols.forEach(col => {
+          const detected = autoDetectField(col);
+          if (detected !== 'SKIP' && !usedCrmKeys.has(detected)) {
+            initialMapping[col] = detected;
+            usedCrmKeys.add(detected);
           } else {
-            seenInFile.add(cleanPhone);
-            validRows.push(row);
+            initialMapping[col] = 'SKIP';
           }
         });
 
-        // Initialize default mappings for unknown staff
-        const initMappings: Record<string, string> = {};
-        unknownStaffSet.forEach(sName => {
-          initMappings[sName] = 'UNASSIGNED';
-        });
-        setStaffMappings(initMappings);
-
-        setValidationSummary({
-          total: rawData.length,
-          validCount: rawData.length - invalidRows.length - duplicateRows.length,
-          invalidCount: invalidRows.length,
-          duplicateCount: duplicateRows.length,
-          unknownStaffCount: unknownStaffSet.size,
-          unknownStaffNames: Array.from(unknownStaffSet),
-          invalidRows,
-          duplicateRows,
-          validRows,
-        });
+        setColumnMapping(initialMapping);
+        setImportStep('mapping');
+        toast.info(`Detected ${detectedCols.length} columns and ${rawData.length} rows. Please review column mappings.`);
       } catch (err: any) {
         toast.error("Error reading file: " + err.message);
       }
@@ -668,22 +699,141 @@ export const LeadsPage: React.FC = () => {
     reader.readAsArrayBuffer(file);
   };
 
+  // Step 2: Proceed from Column Mapping to Preview & Duplicate Check
+  const handleProceedToPreview = () => {
+    const mappedToName = Object.values(columnMapping).includes('fullName');
+    const mappedToPhone = Object.values(columnMapping).includes('phone');
+
+    if (!mappedToName || !mappedToPhone) {
+      toast.error('Both "Lead Name" and "Mobile / Phone Number" columns must be mapped to proceed.');
+      return;
+    }
+
+    const existingPhones = new Set(
+      leads.map(l => l.phone.replace(/\D/g, '').slice(-10)).filter(Boolean)
+    );
+
+    const knownStaffIds = new Set(staffUsers.map(u => u.id));
+    const knownStaffExact = new Set(staffUsers.map(u => u.name.trim().toLowerCase()));
+    const knownStaffNorm = new Set(staffUsers.map(u => u.name.replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase()));
+
+    const seenInFile = new Set<string>();
+    const invalidRows: Array<{ rowNum: number; error: string; data: any }> = [];
+    const duplicateRows: Array<{ rowNum: number; phone: string; data: any; reason?: string }> = [];
+    const validRows: any[] = [];
+    const allMappedRows: any[] = [];
+    const unknownStaffSet = new Set<string>();
+
+    rawUploadedRows.forEach((rawRow, idx) => {
+      const rowNum = idx + 2;
+      const mappedRow: any = {};
+
+      Object.entries(columnMapping).forEach(([excelCol, crmField]) => {
+        if (crmField && crmField !== 'SKIP') {
+          mappedRow[crmField] = rawRow[excelCol];
+        }
+      });
+
+      const name = String(mappedRow.fullName || '').trim();
+      const phone = String(mappedRow.phone || '').trim();
+      const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+
+      mappedRow._rowNum = rowNum;
+      mappedRow._cleanPhone = cleanPhone;
+
+      // Check Assigned Staff
+      const rawAssigned = String(mappedRow.assignedTo || '').trim();
+      if (rawAssigned && rawAssigned.toLowerCase() !== 'unassigned' && rawAssigned !== '-') {
+        const cleanAssigned = rawAssigned.replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase();
+        const matched = knownStaffIds.has(rawAssigned) ||
+                        knownStaffExact.has(rawAssigned.toLowerCase()) ||
+                        knownStaffNorm.has(cleanAssigned);
+        if (!matched) {
+          unknownStaffSet.add(rawAssigned);
+        }
+      }
+
+      if (!name) {
+        mappedRow._statusType = 'INVALID';
+        mappedRow._statusReason = 'Name is required';
+        invalidRows.push({ rowNum, error: 'Name is required', data: mappedRow });
+      } else if (!cleanPhone || cleanPhone.length < 8) {
+        mappedRow._statusType = 'INVALID';
+        mappedRow._statusReason = 'Invalid mobile number (< 8 digits)';
+        invalidRows.push({ rowNum, error: 'Valid phone number is required', data: mappedRow });
+      } else if (seenInFile.has(cleanPhone)) {
+        mappedRow._statusType = 'DUPLICATE';
+        mappedRow._statusReason = 'Duplicate phone number in uploaded file';
+        duplicateRows.push({ rowNum, phone: cleanPhone, data: mappedRow, reason: 'Duplicate in uploaded file' });
+      } else if (existingPhones.has(cleanPhone)) {
+        mappedRow._statusType = 'DUPLICATE';
+        mappedRow._statusReason = 'Phone number already exists in CRM database';
+        duplicateRows.push({ rowNum, phone: cleanPhone, data: mappedRow, reason: 'Already exists in CRM database' });
+        seenInFile.add(cleanPhone);
+      } else {
+        seenInFile.add(cleanPhone);
+        mappedRow._statusType = 'VALID';
+        validRows.push(mappedRow);
+      }
+
+      allMappedRows.push(mappedRow);
+    });
+
+    // Default unknown staff mappings
+    const initMappings: Record<string, string> = {};
+    unknownStaffSet.forEach(sName => {
+      initMappings[sName] = 'UNASSIGNED';
+    });
+    setStaffMappings(initMappings);
+
+    setValidationSummary({
+      total: rawUploadedRows.length,
+      validCount: validRows.length,
+      invalidCount: invalidRows.length,
+      duplicateCount: duplicateRows.length,
+      unknownStaffCount: unknownStaffSet.size,
+      unknownStaffNames: Array.from(unknownStaffSet),
+      invalidRows,
+      duplicateRows,
+      validRows,
+    });
+
+    setImportPreviewRows(allMappedRows);
+    setPreviewFilterTab('ALL');
+    setImportStep('preview');
+  };
+
+  // Step 3: Execute Lead Import
   const handleExecuteImport = async () => {
     if (!validationSummary || !importFile) return;
 
     try {
       setImporting(true);
+
+      let leadsToSend: any[] = [];
+      if (importMode === 'import_valid' || importMode === 'skip_duplicates') {
+        leadsToSend = validationSummary.validRows;
+      } else if (importMode === 'update_duplicates') {
+        leadsToSend = [...validationSummary.validRows, ...validationSummary.duplicateRows.map(d => d.data)];
+      }
+
+      if (leadsToSend.length === 0) {
+        toast.error('No valid leads to import under the selected duplicate mode.');
+        return;
+      }
+
       const res = await api.importLeads({
-        leads: importPreviewRows,
+        leads: leadsToSend,
         fileName: importFile.name,
         mode: importMode,
-        importedBy: 'Admin / Staff',
+        importedBy: user?.name || 'Staff',
         staffMappings: staffMappings,
       });
 
       setImportResult(res.summary);
+      setImportStep('complete');
       toast.success(
-        `Successfully imported ${res.summary.successfulRecords} leads! ${res.summary.failedRecords} invalid rows, ${res.summary.duplicateRecords} duplicates processed.`
+        `Successfully imported ${res.summary.successfulRecords} leads! ${res.summary.failedRecords} invalid rows rejected, ${res.summary.duplicateRecords} duplicates handled.`
       );
       fetchLeads();
     } catch (err: any) {
@@ -782,6 +932,7 @@ export const LeadsPage: React.FC = () => {
               setImportFile(null);
               setValidationSummary(null);
               setImportResult(null);
+              setImportStep('upload');
               setShowImportModal(true);
             }}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-all"
@@ -798,6 +949,16 @@ export const LeadsPage: React.FC = () => {
           >
             <History className="w-3.5 h-3.5" />
             Import History
+          </button>
+
+          {/* Safe Reset Leads Data Button */}
+          <button
+            onClick={() => setShowResetConfirmModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-all"
+            title="Safely reset all lead records to import a new Leads Excel file"
+          >
+            <Trash2 className="w-4 h-4 text-rose-600" />
+            Reset Leads Data
           </button>
 
           <button
@@ -932,10 +1093,39 @@ export const LeadsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* FEATURE 5: LEADS DATA TABLE */}
+      {/* FEATURE 5: LEADS DATA TABLE OR EMPTY STATE */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        {leads.length === 0 ? (
+          <div className="py-20 px-6 text-center space-y-4">
+            <div className="w-16 h-16 bg-slate-100 rounded-3xl mx-auto flex items-center justify-center text-slate-400 shadow-inner">
+              <FileSpreadsheet className="w-8 h-8 text-slate-400" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-black text-slate-900">No Leads Found</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                Upload your new Leads Excel file to get started.
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setImportFile(null);
+                  setValidationSummary(null);
+                  setImportResult(null);
+                  setImportStep('upload');
+                  setShowImportModal(true);
+                }}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 cursor-pointer transition-all hover:scale-105 active:scale-95"
+              >
+                <Upload className="w-4 h-4" />
+                + Import Leads Excel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
                 <th
@@ -1192,7 +1382,8 @@ export const LeadsPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      )}
+    </div>
 
       {/* ========================================================================= */}
       {/* AUTOMATIC LEAD PRIORITY ASSESSMENT & BREAKDOWN MODAL */}
@@ -1537,19 +1728,74 @@ export const LeadsPage: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* FEATURE 1: BULK IMPORT LEADS MODAL & PREVIEW TABLE */}
+      {/* SAFE RESET LEADS DATA CONFIRMATION MODAL */}
+      {/* ========================================================================= */}
+      {showResetConfirmModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-md w-full p-6 animate-in fade-in zoom-in-95 space-y-5 text-xs">
+            <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
+              <div className="p-2.5 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200">
+                <ShieldAlert className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">Reset Leads Data</h3>
+                <p className="text-[11px] text-slate-500">Lead Database Maintenance & Fresh Import Preparation</p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-rose-50/80 border border-rose-200 rounded-2xl space-y-2">
+              <div className="flex items-center gap-2 text-rose-800 font-extrabold text-xs">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                Permanent Data Removal Warning
+              </div>
+              <p className="text-xs text-rose-950 font-medium leading-relaxed">
+                This will permanently remove all existing lead records, lead communication history, lead location history and lead import history. Student, enrollment, attendance and other CRM data will not be affected.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={resettingLeads}
+                onClick={() => setShowResetConfirmModal(false)}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={resettingLeads}
+                onClick={handleResetLeadsData}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black shadow-md shadow-rose-600/20 cursor-pointer transition-all disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                {resettingLeads ? 'Resetting Leads...' : 'Yes, Reset Leads Data'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* FEATURE 1: MULTI-STEP DYNAMIC BULK IMPORT LEADS WIZARD */}
       {/* ========================================================================= */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-3xl w-full p-6 md:p-7 animate-in fade-in zoom-in-95 max-h-[92vh] overflow-y-auto space-y-5 text-xs">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-4xl w-full p-6 md:p-7 animate-in fade-in zoom-in-95 max-h-[92vh] overflow-y-auto space-y-5 text-xs">
+            {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200">
                   <FileSpreadsheet className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-slate-900">Bulk Import Leads from Excel / CSV</h3>
-                  <p className="text-xs text-slate-500">Upload .xlsx, .xls, or .csv files with automatic validation & duplicate prevention</p>
+                  <h3 className="text-lg font-black text-slate-900">Import Leads from Excel / CSV</h3>
+                  <p className="text-xs text-slate-500">
+                    {importStep === 'upload' && 'Upload .xlsx, .xls, or .csv with custom or arbitrary column names'}
+                    {importStep === 'mapping' && 'Map your uploaded file columns to CRM lead fields'}
+                    {importStep === 'preview' && 'Review validation, duplicate check, and preview records before import'}
+                    {importStep === 'complete' && 'Import process completed successfully'}
+                  </p>
                 </div>
               </div>
               <button
@@ -1560,55 +1806,248 @@ export const LeadsPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Template Download & File Selector */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col justify-between space-y-3">
-                <div>
-                  <h4 className="font-extrabold text-slate-900">1. Download Excel Template</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Template pre-formatted with: <strong>Name, Phone, Email, Address, Lead Source, Training Requirement, Class Preference, Status, Priority, Notes</strong>
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleDownloadExcelTemplate}
-                  className="px-4 py-2.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl font-bold shadow-xs cursor-pointer inline-flex items-center justify-center gap-2"
-                >
-                  <Download className="w-4 h-4 text-emerald-600" />
-                  Download Excel Template (.xlsx)
-                </button>
-              </div>
+            {/* Wizard Steps Progress Indicator */}
+            <div className="grid grid-cols-4 gap-2 pb-1">
+              {[
+                { step: 'upload', label: '1. Upload File', desc: 'Select spreadsheet' },
+                { step: 'mapping', label: '2. Column Mapping', desc: 'Map fields & skip' },
+                { step: 'preview', label: '3. Validate & Preview', desc: 'Duplicate check' },
+                { step: 'complete', label: '4. Complete', desc: 'Database updated' },
+              ].map((s, idx) => {
+                const isActive = importStep === s.step;
+                const isPassed =
+                  (s.step === 'upload' && importStep !== 'upload') ||
+                  (s.step === 'mapping' && (importStep === 'preview' || importStep === 'complete')) ||
+                  (s.step === 'preview' && importStep === 'complete');
 
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col justify-between space-y-3">
-                <div>
-                  <h4 className="font-extrabold text-slate-900">2. Select File to Upload</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Supports Microsoft Excel (.xlsx, .xls) and standard comma-separated (.csv)
-                  </p>
+                return (
+                  <div
+                    key={s.step}
+                    className={`p-2.5 rounded-xl border text-center transition-all ${
+                      isActive
+                        ? 'bg-brand-50 border-brand-300 text-brand-900 shadow-2xs font-extrabold'
+                        : isPassed
+                        ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800 font-semibold'
+                        : 'bg-slate-50 border-slate-200 text-slate-400 font-medium'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-1.5 text-xs">
+                      {isPassed ? <Check className="w-3.5 h-3.5 text-emerald-600 font-black" /> : null}
+                      <span>{s.label}</span>
+                    </div>
+                    <div className="text-[10px] opacity-75 mt-0.5">{s.desc}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ------------------------------------------------------------- */}
+            {/* STEP 1: UPLOAD FILE */}
+            {/* ------------------------------------------------------------- */}
+            {importStep === 'upload' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col justify-between space-y-3">
+                    <div>
+                      <h4 className="font-extrabold text-slate-900 text-sm">Download Reference Template</h4>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                        Optional starter template formatted with default columns and active staff directory for reference.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleDownloadExcelTemplate}
+                      className="px-4 py-2.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl font-bold shadow-xs cursor-pointer inline-flex items-center justify-center gap-2"
+                    >
+                      <Download className="w-4 h-4 text-emerald-600" />
+                      Download Template (.xlsx)
+                    </button>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col justify-between space-y-3">
+                    <div>
+                      <h4 className="font-extrabold text-slate-900 text-sm">Select Your Leads File</h4>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                        Supports <strong>.xlsx</strong>, <strong>.xls</strong>, or <strong>.csv</strong>. Custom column headers are fully supported.
+                      </p>
+                    </div>
+                    <div>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept=".xlsx,.xls,.csv"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold shadow-xs cursor-pointer inline-flex items-center justify-center gap-2"
+                      >
+                        <Upload className="w-4 h-4" />
+                        {importFile ? importFile.name : 'Choose File to Upload'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept=".xlsx,.xls,.csv"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
+
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-3">
+                  <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <h5 className="font-extrabold text-blue-900 text-xs">Flexible Header Support</h5>
+                    <p className="text-[11px] text-blue-800 leading-relaxed">
+                      You don't need to rename your Excel columns before uploading. On the next screen, you can map any column name (e.g. <em>Client Name</em>, <em>Contact</em>, <em>City</em>, <em>Car Model</em>) directly to CRM fields or skip unneeded columns.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------- */}
+            {/* STEP 2: COLUMN MAPPING */}
+            {/* ------------------------------------------------------------- */}
+            {importStep === 'mapping' && (
+              <div className="space-y-4">
+                {/* Mapping Status Banner */}
+                {(() => {
+                  const mappedName = Object.values(columnMapping).includes('fullName');
+                  const mappedPhone = Object.values(columnMapping).includes('phone');
+                  const allRequiredMapped = mappedName && mappedPhone;
+
+                  return (
+                    <div
+                      className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
+                        allRequiredMapped
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                          : 'bg-amber-50 border-amber-200 text-amber-900'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        {allRequiredMapped ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                        ) : (
+                          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+                        )}
+                        <div>
+                          <h5 className="font-extrabold text-xs">
+                            {allRequiredMapped
+                              ? 'Required Columns Successfully Mapped'
+                              : 'Required Column Mapping Incomplete'}
+                          </h5>
+                          <p className="text-[11px] opacity-90 mt-0.5">
+                            {allRequiredMapped
+                              ? 'Lead Name and Mobile Phone are both mapped. You can proceed or adjust optional field mappings.'
+                              : 'You must map both "Lead Name / Full Name *" and "Mobile / Phone Number *" before proceeding to preview.'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-[11px] font-mono font-bold px-2 py-1 bg-white rounded-lg border border-slate-200">
+                          {uploadedColumns.length} Columns Detected
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Column Mapping Table */}
+                <div className="border border-slate-200 rounded-2xl overflow-hidden max-h-[46vh] overflow-y-auto custom-scrollbar">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-100 sticky top-0 font-extrabold text-slate-700 text-[11px]">
+                      <tr>
+                        <th className="py-2.5 px-3 w-12 text-center">#</th>
+                        <th className="py-2.5 px-3">Excel / CSV Column Header</th>
+                        <th className="py-2.5 px-3">Sample Value (Row 1)</th>
+                        <th className="py-2.5 px-3">Maps to CRM Field</th>
+                        <th className="py-2.5 px-3 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {uploadedColumns.map((col, idx) => {
+                        const currentMappedKey = columnMapping[col] || 'SKIP';
+                        const sampleVal = rawUploadedRows[0] ? String(rawUploadedRows[0][col] || '—') : '—';
+                        const isRequired = currentMappedKey === 'fullName' || currentMappedKey === 'phone';
+
+                        return (
+                          <tr key={col} className="hover:bg-slate-50 transition-colors">
+                            <td className="py-2 px-3 text-center font-mono text-slate-400 font-bold">{idx + 1}</td>
+                            <td className="py-2 px-3">
+                              <span className="font-extrabold text-slate-900 font-mono text-xs bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                                {col}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-slate-600 font-medium max-w-[180px] truncate" title={sampleVal}>
+                              {sampleVal}
+                            </td>
+                            <td className="py-2 px-3">
+                              <select
+                                value={currentMappedKey}
+                                onChange={(e) => {
+                                  const newVal = e.target.value;
+                                  setColumnMapping(prev => ({ ...prev, [col]: newVal }));
+                                }}
+                                className={`w-full px-2.5 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer ${
+                                  isRequired
+                                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900 focus:ring-emerald-500'
+                                    : currentMappedKey !== 'SKIP'
+                                    ? 'bg-brand-50 border-brand-300 text-brand-900 focus:ring-brand-500'
+                                    : 'bg-white border-slate-200 text-slate-600 focus:ring-slate-400'
+                                }`}
+                              >
+                                {CRM_MAPPING_FIELDS.map(f => (
+                                  <option key={f.key} value={f.key}>
+                                    {f.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="py-2 px-3 text-center">
+                              {currentMappedKey === 'SKIP' ? (
+                                <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 rounded-full bg-slate-100">
+                                  Skipped
+                                </span>
+                              ) : isRequired ? (
+                                <span className="text-[10px] font-black text-emerald-700 px-2 py-0.5 rounded-full bg-emerald-100">
+                                  ✓ Required
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-brand-700 px-2 py-0.5 rounded-full bg-brand-50 border border-brand-200">
+                                  Mapped
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex items-center justify-between pt-2">
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold shadow-xs cursor-pointer inline-flex items-center justify-center gap-2"
+                    onClick={() => setImportStep('upload')}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer"
                   >
-                    <Upload className="w-4 h-4" />
-                    {importFile ? importFile.name : 'Choose File to Upload'}
+                    ← Back to File Upload
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleProceedToPreview}
+                    className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-black shadow-md shadow-brand-500/20 cursor-pointer inline-flex items-center gap-2"
+                  >
+                    Next: Validate & Preview ({rawUploadedRows.length} Rows) →
                   </button>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Validation Preview Card */}
-            {validationSummary && (
-              <div className="space-y-4 animate-in fade-in">
+            {/* ------------------------------------------------------------- */}
+            {/* STEP 3: VALIDATE & PREVIEW */}
+            {/* ------------------------------------------------------------- */}
+            {importStep === 'preview' && validationSummary && (
+              <div className="space-y-4">
+                {/* Summary KPI Badges */}
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   <div className="p-3 bg-slate-100 rounded-2xl text-center">
                     <span className="text-[10px] uppercase font-bold text-slate-500">Total Rows</span>
@@ -1618,13 +2057,13 @@ export const LeadsPage: React.FC = () => {
                     <span className="text-[10px] uppercase font-bold text-emerald-700">Valid Leads</span>
                     <h4 className="text-xl font-black text-emerald-700">{validationSummary.validCount}</h4>
                   </div>
-                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-center">
-                    <span className="text-[10px] uppercase font-bold text-rose-700">Invalid Rows</span>
-                    <h4 className="text-xl font-black text-rose-700">{validationSummary.invalidCount}</h4>
-                  </div>
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-center">
                     <span className="text-[10px] uppercase font-bold text-amber-700">Duplicates</span>
                     <h4 className="text-xl font-black text-amber-700">{validationSummary.duplicateCount}</h4>
+                  </div>
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-center">
+                    <span className="text-[10px] uppercase font-bold text-rose-700">Invalid Rows</span>
+                    <h4 className="text-xl font-black text-rose-700">{validationSummary.invalidCount}</h4>
                   </div>
                   <div className="p-3 bg-purple-50 border border-purple-200 rounded-2xl text-center">
                     <span className="text-[10px] uppercase font-bold text-purple-700">Unknown Staff</span>
@@ -1644,7 +2083,7 @@ export const LeadsPage: React.FC = () => {
                     <p className="text-[11px] text-amber-800">
                       The following staff names in the file do not match current CRM employees. Map each to a known staff member, leave unassigned, or skip rows:
                     </p>
-                    <div className="space-y-2 max-h-36 overflow-y-auto custom-scrollbar pt-1">
+                    <div className="space-y-2 max-h-32 overflow-y-auto custom-scrollbar pt-1">
                       {validationSummary.unknownStaffNames.map(staffName => (
                         <div key={staffName} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 bg-white rounded-xl border border-amber-200">
                           <span className="font-mono font-bold text-slate-900 text-xs">
@@ -1669,27 +2108,12 @@ export const LeadsPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Validation Errors List (if any) */}
-                {validationSummary.invalidRows.length > 0 && (
-                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl space-y-1">
-                    <h5 className="font-extrabold text-rose-900 text-xs flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                      Rows containing errors (will not be imported):
-                    </h5>
-                    <div className="max-h-24 overflow-y-auto space-y-1 custom-scrollbar text-[11px] text-rose-800">
-                      {validationSummary.invalidRows.map((err, i) => (
-                        <div key={i}>• <strong>Row {err.rowNum}:</strong> {err.error}</div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {/* Duplicate Handling Options */}
                 <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
                   <span className="block font-bold text-slate-700">Choose Duplicate Handling Action:</span>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {[
-                      { id: 'import_valid', label: 'Import Only Valid Leads', desc: 'Skip invalid & duplicate rows' },
+                      { id: 'import_valid', label: 'Import Only Valid Leads', desc: 'Skip duplicate & invalid rows' },
                       { id: 'skip_duplicates', label: 'Skip Duplicates', desc: 'Prevent overwriting existing leads' },
                       { id: 'update_duplicates', label: 'Update Duplicate Leads', desc: 'Update details by phone number' }
                     ].map(opt => (
@@ -1712,73 +2136,156 @@ export const LeadsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Import Preview Table */}
-                <div className="border border-slate-200 rounded-2xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar">
+                {/* Filter Tabs for Preview */}
+                <div className="flex items-center gap-1.5 border-b border-slate-200 pb-2">
+                  {[
+                    { id: 'ALL', label: `All Records (${validationSummary.total})` },
+                    { id: 'VALID', label: `Valid Leads (${validationSummary.validCount})` },
+                    { id: 'DUPLICATES', label: `Duplicates (${validationSummary.duplicateCount})` },
+                    { id: 'INVALID', label: `Invalid Rows (${validationSummary.invalidCount})` },
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setPreviewFilterTab(tab.id as any)}
+                      className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition-colors cursor-pointer ${
+                        previewFilterTab === tab.id
+                          ? 'bg-slate-900 text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Preview Table */}
+                <div className="border border-slate-200 rounded-2xl overflow-hidden max-h-52 overflow-y-auto custom-scrollbar">
                   <table className="w-full text-left text-[11px]">
-                    <thead className="bg-slate-100 sticky top-0 font-bold text-slate-600">
+                    <thead className="bg-slate-100 sticky top-0 font-extrabold text-slate-700">
                       <tr>
                         <th className="py-2 px-3">#</th>
-                        <th className="py-2 px-3">Name</th>
-                        <th className="py-2 px-3">Phone</th>
+                        <th className="py-2 px-3">Lead Name</th>
+                        <th className="py-2 px-3">Mobile Phone</th>
+                        <th className="py-2 px-3">Location</th>
                         <th className="py-2 px-3">Requirement</th>
-                        <th className="py-2 px-3">Preference</th>
+                        <th className="py-2 px-3">Vehicle</th>
                         <th className="py-2 px-3">Assigned To</th>
-                        <th className="py-2 px-3">Source</th>
+                        <th className="py-2 px-3 text-center">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {importPreviewRows.slice(0, 15).map((row, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50">
-                          <td className="py-1.5 px-3 font-mono text-slate-400">{idx + 1}</td>
-                          <td className="py-1.5 px-3 font-bold text-slate-900">{row.Name || row.fullName || '—'}</td>
-                          <td className="py-1.5 px-3 font-mono">{row.Phone || row.phone || '—'}</td>
-                          <td className="py-1.5 px-3">{row['Training Requirement'] || 'Both Licence + Driving'}</td>
-                          <td className="py-1.5 px-3">{row['Class Preference'] || 'Weekend Class'}</td>
-                          <td className="py-1.5 px-3 font-medium text-slate-600">{row['Assigned To'] || row.assignedTo || 'Unassigned'}</td>
-                          <td className="py-1.5 px-3">{row['Lead Source'] || 'EXCEL_IMPORT'}</td>
-                        </tr>
-                      ))}
+                      {importPreviewRows
+                        .filter(row => {
+                          if (previewFilterTab === 'VALID') return row._statusType === 'VALID';
+                          if (previewFilterTab === 'DUPLICATES') return row._statusType === 'DUPLICATE';
+                          if (previewFilterTab === 'INVALID') return row._statusType === 'INVALID';
+                          return true;
+                        })
+                        .slice(0, 30)
+                        .map((row, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="py-1.5 px-3 font-mono text-slate-400">{row._rowNum}</td>
+                            <td className="py-1.5 px-3 font-bold text-slate-900">{row.fullName || '—'}</td>
+                            <td className="py-1.5 px-3 font-mono">{row.phone || '—'}</td>
+                            <td className="py-1.5 px-3 text-slate-600">{row.location || '—'}</td>
+                            <td className="py-1.5 px-3">{row.trainingRequirement || 'Both Licence + Driving'}</td>
+                            <td className="py-1.5 px-3">{row.interestedVehicle || '—'}</td>
+                            <td className="py-1.5 px-3 font-medium text-slate-600">{row.assignedTo || 'Unassigned'}</td>
+                            <td className="py-1.5 px-3 text-center">
+                              {row._statusType === 'VALID' && (
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                                  Valid
+                                </span>
+                              )}
+                              {row._statusType === 'DUPLICATE' && (
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800" title={row._statusReason}>
+                                  Duplicate
+                                </span>
+                              )}
+                              {row._statusType === 'INVALID' && (
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800" title={row._statusReason}>
+                                  Invalid
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
-              </div>
-            )}
 
-            {/* Import Summary Result (After Import) */}
-            {importResult && (
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-1.5 animate-in fade-in">
-                <h4 className="font-extrabold text-emerald-950 text-sm flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  Import Execution Completed Successfully!
-                </h4>
-                <div className="text-xs text-emerald-900 font-medium space-y-0.5">
-                  <p>• Successfully imported: <strong>{importResult.successfulRecords} leads</strong></p>
-                  <p>• Invalid rows rejected: <strong>{importResult.failedRecords} rows</strong></p>
-                  <p>• Duplicate leads processed: <strong>{importResult.duplicateRecords} records</strong> ({importMode === 'update_duplicates' ? 'Updated' : 'Skipped'})</p>
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setImportStep('mapping')}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer"
+                  >
+                    ← Back to Column Mapping
+                  </button>
+                  <button
+                    type="button"
+                    disabled={importing || (validationSummary.validCount === 0 && importMode !== 'update_duplicates')}
+                    onClick={handleExecuteImport}
+                    className="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-black shadow-md shadow-brand-500/20 cursor-pointer disabled:opacity-50 inline-flex items-center gap-2"
+                  >
+                    <Check className="w-4 h-4" />
+                    {importing
+                      ? 'Importing Leads...'
+                      : `Import Valid Records (${
+                          importMode === 'update_duplicates'
+                            ? validationSummary.validCount + validationSummary.duplicateCount
+                            : validationSummary.validCount
+                        } Leads)`}
+                  </button>
                 </div>
               </div>
             )}
 
-            {/* Footer Buttons */}
-            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setShowImportModal(false)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer"
-              >
-                {importResult ? 'Close' : 'Cancel'}
-              </button>
-              {validationSummary && !importResult && (
-                <button
-                  type="button"
-                  disabled={importing}
-                  onClick={handleExecuteImport}
-                  className="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-black shadow-md shadow-brand-500/20 cursor-pointer disabled:opacity-50"
-                >
-                  {importing ? 'Importing Leads...' : `Confirm Import (${validationSummary.validCount} Leads)`}
-                </button>
-              )}
-            </div>
+            {/* ------------------------------------------------------------- */}
+            {/* STEP 4: COMPLETE */}
+            {/* ------------------------------------------------------------- */}
+            {importStep === 'complete' && importResult && (
+              <div className="space-y-5 text-center py-4">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full mx-auto flex items-center justify-center shadow-inner">
+                  <CheckCircle2 className="w-9 h-9" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-black text-slate-900">Import Completed Successfully!</h3>
+                  <p className="text-xs text-slate-500">
+                    Your leads have been imported and sequential continuous IDs (e.g. LEAD-0001, LEAD-0002...) were generated.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 max-w-lg mx-auto pt-2">
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                    <span className="text-[10px] uppercase font-bold text-emerald-700">Imported Leads</span>
+                    <h4 className="text-xl font-black text-emerald-800">{importResult.successfulRecords}</h4>
+                  </div>
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl">
+                    <span className="text-[10px] uppercase font-bold text-amber-700">Duplicates Processed</span>
+                    <h4 className="text-xl font-black text-amber-800">{importResult.duplicateRecords}</h4>
+                  </div>
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl">
+                    <span className="text-[10px] uppercase font-bold text-rose-700">Invalid Skipped</span>
+                    <h4 className="text-xl font-black text-rose-800">{importResult.failedRecords}</h4>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowImportModal(false);
+                      setImportStep('upload');
+                    }}
+                    className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black shadow-md cursor-pointer transition-all"
+                  >
+                    View Leads in CRM
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

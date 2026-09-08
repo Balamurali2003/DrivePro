@@ -461,6 +461,54 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
+      {/* TODAY'S ATTENDANCE HUB SNAPSHOT */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-brand-600" />
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm">Today's Attendance</h3>
+              <p className="text-[11px] text-slate-500">Live enrolled student attendance register for today</p>
+            </div>
+          </div>
+          <Link
+            to="/attendance"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-800 border border-brand-200 font-bold text-xs transition-colors"
+          >
+            Open Daily Attendance Hub →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Total Enrolled</span>
+            <p className="text-xl font-black text-slate-900 mt-1">{classes.totalEnrolled ?? students.activeStudents ?? 0}</p>
+          </div>
+          <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-100">
+            <span className="text-[10px] font-bold text-emerald-700 uppercase">Present</span>
+            <p className="text-xl font-black text-emerald-900 mt-1">{classes.presentStudents ?? 0}</p>
+          </div>
+          <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-100">
+            <span className="text-[10px] font-bold text-rose-700 uppercase">Absent</span>
+            <p className="text-xl font-black text-rose-900 mt-1">{classes.absentStudents ?? 0}</p>
+          </div>
+          <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-100">
+            <span className="text-[10px] font-bold text-indigo-700 uppercase">Late</span>
+            <p className="text-xl font-black text-indigo-900 mt-1">{classes.lateStudents ?? 0}</p>
+          </div>
+          <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-100">
+            <span className="text-[10px] font-bold text-amber-700 uppercase">Leave</span>
+            <p className="text-xl font-black text-amber-900 mt-1">{classes.leaveStudents ?? 0}</p>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-100 border border-slate-200">
+            <span className="text-[10px] font-bold text-slate-600 uppercase">Not Marked</span>
+            <p className="text-xl font-black text-slate-800 mt-1">
+              {classes.notMarkedStudents ?? Math.max(0, (classes.totalEnrolled ?? students.activeStudents ?? 0) - ((classes.presentStudents ?? 0) + (classes.absentStudents ?? 0) + (classes.lateStudents ?? 0) + (classes.leaveStudents ?? 0)))}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* 6. SECTIONS 9 & 10: FOLLOW-UPS & RTO TEST TRACKER */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Follow-up Tracking */}

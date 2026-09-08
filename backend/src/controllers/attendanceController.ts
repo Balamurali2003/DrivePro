@@ -2,6 +2,20 @@ import { Request, Response } from 'express';
 import { prisma } from '../db';
 
 /**
+ * Format current or given Date to 12-hour AM/PM string (e.g. 09:15 AM)
+ */
+export function formatTime12h(date: Date = new Date()): string {
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // 0 should be 12
+  const strHours = String(hours).padStart(2, '0');
+  const strMinutes = String(minutes).padStart(2, '0');
+  return `${strHours}:${strMinutes} ${ampm}`;
+}
+
+/**
  * Format a Date object to YYYY-MM-DD string
  */
 function toDateKey(d: Date): string {
@@ -37,12 +51,12 @@ export async function getAttendance(req: Request, res: Response): Promise<void> 
 
     const { start, end } = getDayBounds(date ? String(date) : undefined);
 
-    // Build student filter - strictly include active and enrolled ongoing students (exclude completed/cancelled)
+    // Build student filter - strictly include active and enrolled ongoing students (exclude completed/cancelled/inactive)
     const studentWhere: any = {};
     if (studentId) {
       studentWhere.id = String(studentId);
     } else {
-      studentWhere.status = { in: ['ACTIVE', 'ENROLLED', 'TRAINING'] };
+      studentWhere.status = { in: ['ACTIVE', 'ENROLLED', 'TRAINING', 'CURRENT'] };
     }
     if (batch && String(batch) !== 'ALL') {
       studentWhere.batch = { contains: String(batch) };
@@ -69,7 +83,9 @@ export async function getAttendance(req: Request, res: Response): Promise<void> 
         phone: true,
         batch: true,
         courseJoined: true,
+        trainingRequirement: true,
         vehicleType: true,
+        joiningDate: true,
         status: true,
         assignedInstructor: {
           select: { id: true, fullName: true }
@@ -140,7 +156,9 @@ export async function getAttendance(req: Request, res: Response): Promise<void> 
         studentName: st.fullName,
         phone: st.phone,
         course: st.courseJoined || st.vehicleType || 'LMV',
+        trainingType: st.trainingRequirement || st.courseJoined || 'Standard Practical Driving',
         batch: st.batch || 'Regular Batch',
+        joiningDate: st.joiningDate ? st.joiningDate.toISOString() : null,
         instructorId: existingAtt?.instructorId || scheduledLesson?.instructorId || st.assignedInstructor?.id || null,
         instructorName,
         vehicleId: existingAtt?.vehicleId || scheduledLesson?.vehicleId || st.assignedVehicle?.id || null,
@@ -194,7 +212,7 @@ export async function getAttendanceSummary(req: Request, res: Response): Promise
     const { start, end } = getDayBounds(date ? String(date) : undefined);
 
     const totalStudents = await prisma.student.count({
-      where: { status: { in: ['ACTIVE', 'ENROLLED', 'TRAINING'] } }
+      where: { status: { in: ['ACTIVE', 'ENROLLED', 'TRAINING', 'CURRENT'] } }
     });
 
     const attendances = await prisma.attendance.findMany({
@@ -220,8 +238,8 @@ export async function getAttendanceSummary(req: Request, res: Response): Promise
     }
 
     const markedTotal = presentCount + absentCount + leaveCount + lateCount;
-    // Calculate Attendance % strictly ignoring Not Marked: Present / (Present + Absent + Late + Leave) * 100
-    const attendancePercentage = markedTotal > 0 ? Math.round((presentCount / markedTotal) * 100) : 0;
+    // Calculate Attendance % strictly ignoring Not Marked: (Present + Late) / (Present + Absent + Late + Leave) * 100
+    const attendancePercentage = markedTotal > 0 ? Math.round(((presentCount + lateCount) / markedTotal) * 100) : 0;
 
     const todaysClasses = await prisma.lesson.count({
       where: { lessonDate: { gte: start, lte: end } }
@@ -457,12 +475,17 @@ export async function recordAttendance(req: Request, res: Response): Promise<voi
 
     let result;
     if (existing) {
+      const isMarkingPresentOrLate = (status === 'Present' || status === 'Late');
+      const resolvedCheckIn = checkInTime !== undefined 
+        ? checkInTime 
+        : (isMarkingPresentOrLate && !existing.checkInTime ? formatTime12h() : (status === 'Absent' ? null : existing.checkInTime));
+
       result = await prisma.attendance.update({
         where: { id: existing.id },
         data: {
           status: status || existing.status,
-          checkInTime: checkInTime !== undefined ? checkInTime : existing.checkInTime,
-          checkOutTime: checkOutTime !== undefined ? checkOutTime : existing.checkOutTime,
+          checkInTime: resolvedCheckIn,
+          checkOutTime: checkOutTime !== undefined ? checkOutTime : (status === 'Absent' ? null : existing.checkOutTime),
           remarks: remarks !== undefined ? remarks : existing.remarks,
           instructorId: instructorId || existing.instructorId,
           vehicleId: vehicleId || existing.vehicleId,
@@ -470,6 +493,7 @@ export async function recordAttendance(req: Request, res: Response): Promise<voi
         }
       });
     } else {
+      const isPresentOrLate = (status === 'Present' || status === 'Late');
       result = await prisma.attendance.create({
         data: {
           attendanceCode: `ATT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -480,7 +504,7 @@ export async function recordAttendance(req: Request, res: Response): Promise<voi
           date: start,
           dateString: dateStr,
           status: status || 'Present',
-          checkInTime: checkInTime || (status === 'Present' || status === 'Late' ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null),
+          checkInTime: checkInTime || (isPresentOrLate ? formatTime12h() : null),
           checkOutTime: checkOutTime || null,
           remarks: remarks || null,
           markedBy: markedBy || 'Front Desk Staff'
@@ -535,12 +559,18 @@ export async function recordBulkAttendance(req: Request, res: Response): Promise
         continue;
       }
 
+      const isPresentOrLate = (item.status === 'Present' || item.status === 'Late');
+
       if (existing) {
+        const resolvedCheckIn = item.checkInTime !== undefined
+          ? item.checkInTime
+          : (isPresentOrLate && !existing.checkInTime ? formatTime12h() : existing.checkInTime);
+
         const updated = await prisma.attendance.update({
           where: { id: existing.id },
           data: {
             status: item.status || existing.status,
-            checkInTime: item.checkInTime !== undefined ? item.checkInTime : existing.checkInTime,
+            checkInTime: resolvedCheckIn,
             checkOutTime: item.checkOutTime !== undefined ? item.checkOutTime : existing.checkOutTime,
             remarks: item.remarks !== undefined ? item.remarks : existing.remarks,
             markedBy: markedBy || 'Staff'
@@ -558,7 +588,7 @@ export async function recordBulkAttendance(req: Request, res: Response): Promise
             date: start,
             dateString: dateStr,
             status: item.status || 'Present',
-            checkInTime: item.checkInTime || (item.status === 'Present' || item.status === 'Late' ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null),
+            checkInTime: item.checkInTime || (isPresentOrLate ? formatTime12h() : null),
             checkOutTime: item.checkOutTime || null,
             remarks: item.remarks || null,
             markedBy: markedBy || 'Front Desk Staff'
@@ -573,6 +603,38 @@ export async function recordBulkAttendance(req: Request, res: Response): Promise
       message: `Successfully processed ${saved.length} attendance records`,
       count: saved.length,
       data: saved
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+/**
+ * POST /api/attendance/clear
+ * Clear attendance records for a specific date (and optional studentIds)
+ * Resets students cleanly to "Not Marked" without deleting student or enrollment data.
+ */
+export async function clearAttendance(req: Request, res: Response): Promise<void> {
+  try {
+    const { date, studentIds } = req.body;
+    const { start, end } = getDayBounds(date);
+
+    const where: any = {
+      date: { gte: start, lte: end }
+    };
+
+    if (Array.isArray(studentIds) && studentIds.length > 0) {
+      where.studentId = { in: studentIds };
+    }
+
+    const deleteResult = await prisma.attendance.deleteMany({
+      where
+    });
+
+    res.json({
+      success: true,
+      message: `Cleared attendance for ${deleteResult.count} student(s). Status reset to Not Marked.`,
+      count: deleteResult.count
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

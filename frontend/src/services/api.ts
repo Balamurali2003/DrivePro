@@ -56,6 +56,7 @@ export const api = {
   deleteLead: (id: string) => apiRequest(`/leads/${id}`, { method: 'DELETE' }),
   convertLead: (id: string, data: any) => apiRequest(`/leads/${id}/convert`, { method: 'POST', body: JSON.stringify(data) }),
   importLeads: (data: any) => apiRequest('/leads/import', { method: 'POST', body: JSON.stringify(data) }),
+  resetLeadsData: () => apiRequest('/leads/reset', { method: 'POST' }),
   getLeadImportHistory: () => apiRequest('/leads/import-history'),
   downloadImportTemplateUrl: '/api/leads/import-template',
 
@@ -67,6 +68,7 @@ export const api = {
   getStudentAttendance: (studentId: string) => apiRequest(`/attendance/student/${studentId}`),
   recordAttendance: (data: any) => apiRequest('/attendance', { method: 'POST', body: JSON.stringify(data) }),
   recordBulkAttendance: (data: any) => apiRequest('/attendance/bulk', { method: 'POST', body: JSON.stringify(data) }),
+  clearAttendance: (data: { date: string; studentIds?: string[] }) => apiRequest('/attendance/clear', { method: 'POST', body: JSON.stringify(data) }),
   updateAttendance: (id: string, data: any) => apiRequest(`/attendance/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteAttendance: (id: string) => apiRequest(`/attendance/${id}`, { method: 'DELETE' }),
 

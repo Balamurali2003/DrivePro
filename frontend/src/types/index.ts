@@ -121,7 +121,9 @@ export interface AttendanceRecord {
   studentName: string;
   phone: string;
   course: string;
+  trainingType?: string;
   batch: string;
+  joiningDate?: string;
   instructorId?: string;
   instructorName: string;
   vehicleId?: string;
@@ -140,6 +142,7 @@ export interface AttendanceRecord {
 
 export interface AttendanceSummary {
   totalStudents: number;
+  totalEnrolled?: number;
   presentToday: number;
   absentToday: number;
   leaveToday: number;

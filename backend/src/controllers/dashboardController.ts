@@ -453,10 +453,13 @@ async function computeDashboardMetrics(range: DateRange) {
       completedClasses: completedClassesCount,
       upcomingClasses: upcomingClassesCount,
       cancelledClasses: cancelledClassesCount,
+      totalEnrolled: activeStudents,
       presentStudents,
       absentStudents,
       leaveStudents,
       lateStudents,
+      notMarkedStudents: Math.max(0, activeStudents - markedAttendanceTotal),
+      markedStudents: markedAttendanceTotal,
       attendancePercentage,
     },
     payments: {

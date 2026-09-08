@@ -43,6 +43,7 @@ router.get('/dashboard/rto', dashCtrl.getRtoStats);
 router.get('/leads/import-template', leadCtrl.getLeadImportTemplate);
 router.get('/leads/import-history', leadCtrl.getLeadImportHistory);
 router.post('/leads/import', logAudit('IMPORT', 'LEADS'), leadCtrl.importLeads);
+router.post('/leads/reset', logAudit('RESET_DATA', 'LEADS'), leadCtrl.resetLeadsData);
 
 // Leads
 router.get('/leads', leadCtrl.getLeads);
@@ -61,12 +62,14 @@ router.post('/leads/:id/convert', logAudit('CONVERT_TO_STUDENT', 'LEADS'), leadC
 
 // Attendance & Daily Training Operations
 router.get('/attendance', attCtrl.getAttendance);
+router.get('/attendance/students', attCtrl.getAttendance);
 router.get('/attendance/today', attCtrl.getTodayAttendance);
 router.get('/attendance/summary', attCtrl.getAttendanceSummary);
 router.get('/attendance/report', attCtrl.getAttendanceReport);
 router.get('/attendance/student/:studentId', attCtrl.getStudentAttendance);
 router.post('/attendance', logAudit('RECORD_ATTENDANCE', 'ATTENDANCE'), attCtrl.recordAttendance);
 router.post('/attendance/bulk', logAudit('BULK_ATTENDANCE', 'ATTENDANCE'), attCtrl.recordBulkAttendance);
+router.post('/attendance/clear', logAudit('CLEAR_ATTENDANCE', 'ATTENDANCE'), attCtrl.clearAttendance);
 router.patch('/attendance/:id', logAudit('UPDATE_ATTENDANCE', 'ATTENDANCE'), attCtrl.updateAttendance);
 router.delete('/attendance/:id', logAudit('DELETE_ATTENDANCE', 'ATTENDANCE'), attCtrl.deleteAttendance);
 
