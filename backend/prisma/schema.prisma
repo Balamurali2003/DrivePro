@@ -1,0 +1,1169 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         String    @default("STAFF")
+  avatar       String?
+  status       String    @default("ACTIVE")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  assignedLeads       Lead[]               @relation("AssignedSales")
+  managedFollowups    LeadFollowup[]
+  instructorProfile   Instructor?
+  studentProfile      Student?
+  employeeProfile     Employee?
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+  complaintsAssigned  Complaint[]          @relation("AssignedComplaint")
+  createdExpenses     Expense[]
+  usedCarSales        UsedCarSale[]        @relation("SalesExecutive")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  permissions String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Lead {
+  id                  String    @id @default(cuid())
+  leadCode            String    @unique
+  leadSequence        Int?
+  fullName            String
+  phone               String
+  whatsappNumber      String?
+  email               String?
+  gender              String?
+  age                 Int?
+  address             String?
+  area                String?
+  preferredLanguage   String?
+  licenceType         String?
+  courseInterested    String?
+  packageInterested   String?
+  trainingRequirement String    @default("Both Licence + Driving") // "Licence Only", "Driving Only", "Both Licence + Driving"
+  classPreference     String    @default("Weekend Class")          // "Weekend Class", "Weekdays Class"
+  transmission        String    @default("MANUAL")
+  preferredTiming     String?
+  preferredInstructorGender String?
+  preferredLocation   String?
+  budget              Float?
+  expectedJoiningDate DateTime?
+  leadSource          String    @default("WEBSITE")
+  campaign            String?
+  assignedToId        String?
+  assignedTo          User?     @relation("AssignedSales", fields: [assignedToId], references: [id])
+  priority            String    @default("MEDIUM")
+  status              String    @default("NEW")
+  aiScore             Int       @default(50)
+  aiRecommendation    String?
+  lastCommunicationAt DateTime?
+  nextFollowUpAt      DateTime?
+  expectedJoinDate    DateTime?
+  notInterestedReason String?
+  notes               String?
+
+  // Real Meta & Sri Munis Kanna Enquiry Fields
+  metaLeadId                  String?
+  adId                        String?
+  adName                      String?
+  adSetId                     String?
+  adSetName                   String?
+  campaignId                  String?
+  campaignName                String?
+  leadCampaign                String?
+  formId                      String?
+  formName                    String?
+  isOrganic                   Boolean?   @default(false)
+  platform                    String?
+  location                    String?
+  originalLocation            String?
+  normalizedLocation          String?
+  latitude                    Float?
+  longitude                   Float?
+  previousDrivingExperience   String?
+  preferredStartTime          String?
+  contactPreference           String?
+  dataSources                 String?    // "Meta", "Sri Munis Kanna Enquiry", "Meta + Sri Munis Kanna Enquiry"
+  originalStatus              String?
+  interestedVehicle           String?
+  batch                       String?
+  days                        String?
+
+  // Automatic Priority Scoring
+  priorityScore               Int       @default(10)
+  priorityLevel               String    @default("LOW") // "HIGH", "MEDIUM", "LOW"
+  priorityUpdatedAt           DateTime  @default(now())
+  priorityReasons             String?
+
+  // Current Location & Address details
+  currentLocation             String?
+  city                        String?
+  district                    String?
+  state                       String?   @default("Tamil Nadu")
+  pincode                     String?
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  communications      LeadCommunication[]
+  followups           LeadFollowup[]
+  activities          LeadActivity[]
+  statusHistory       LeadStatusHistory[]
+  locationHistory     LeadLocationHistory[]
+  convertedStudent    Student?
+  referralsMade       Referral[]          @relation("ReferrerLead")
+}
+
+model LeadLocationHistory {
+  id           String    @id @default(cuid())
+  leadId       String
+  lead         Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  oldLocation  String?
+  newLocation  String?
+  oldLatitude  Float?
+  oldLongitude Float?
+  newLatitude  Float?
+  newLongitude Float?
+  changedBy    String    @default("Staff")
+  changedAt    DateTime  @default(now())
+}
+
+model LeadImportHistory {
+  id                String   @id @default(cuid())
+  fileName          String
+  sheetName         String?
+  importType        String?  @default("LEADS")
+  totalRecords      Int
+  successfulRecords Int
+  failedRecords     Int
+  duplicateRecords  Int
+  updatedRecords    Int?     @default(0)
+  importedBy        String   @default("Staff")
+  importedAt        DateTime @default(now())
+}
+
+model LeadFollowup {
+  id              String    @id @default(cuid())
+  leadId          String
+  lead            Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id])
+  activityType    String
+  followupDate    DateTime
+  time            String?
+  notes           String
+  outcome         String?
+  nextFollowupDate DateTime?
+  reminderSent    Boolean   @default(false)
+  status          String    @default("SCHEDULED")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model LeadActivity {
+  id          String   @id @default(cuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  actionType  String
+  description String
+  actorName   String
+  metadata    String?
+  createdAt   DateTime @default(now())
+}
+
+model LeadStatusHistory {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  fromStatus String
+  toStatus   String
+  changedBy  String
+  reason     String?
+  createdAt  DateTime @default(now())
+}
+
+model Student {
+  id                  String    @id @default(cuid())
+  studentCode         String    @unique
+  userId              String?   @unique
+  user                User?     @relation(fields: [userId], references: [id])
+  leadId              String?   @unique
+  lead                Lead?     @relation(fields: [leadId], references: [id])
+  fullName            String
+  photo               String?
+  phone               String
+  whatsappNumber      String?
+  email               String?
+  gender              String
+  dob                 DateTime?
+  address             String?
+  area                String?
+  emergencyContactName String?
+  emergencyContactPhone String?
+  idProofType         String?
+  idProofNumber       String?
+  learnerLicenceNumber String?
+  learnerLicenceExpiry DateTime?
+  drivingLicenceNumber String?
+  drivingLicenceExpiry DateTime?
+  medicalCertificate  Boolean   @default(false)
+  
+  assignedInstructorId String?
+  assignedInstructor   Instructor? @relation(fields: [assignedInstructorId], references: [id])
+  assignedVehicleId    String?
+  assignedVehicle      Vehicle?    @relation(fields: [assignedVehicleId], references: [id])
+  
+  status              String    @default("ACTIVE")
+  progressPercentage  Int       @default(0)
+  totalLessons        Int       @default(15)
+  completedLessons    Int       @default(0)
+  remainingLessons    Int       @default(15)
+  notes               String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  enrollments         Enrollment[]
+  lessons             Lesson[]
+  payments            Payment[]
+  invoices            Invoice[]
+  refunds             Refund[]
+  tests               Test[]
+  licenceRecords      LicenceRecord[]
+  complaints          Complaint[]
+  feedbacks           Feedback[]
+  documents           StudentDocument[]
+  attendanceRecords   LessonAttendance[]
+  skillProgress       LessonProgress[]
+  referralsGiven      Referral[]         @relation("ReferrerStudent")
+  renewals            Renewal[]
+  attendances         Attendance[]
+
+  // Real Sri Munis Kanna Driving School fields
+  batch               String?
+  licenseStatus       String?
+  vehicleType         String?
+  joiningDate         DateTime?
+  courseJoined        String?
+  age                 Int?
+  trainingRequirement String?
+  classPreference     String?
+  location            String?
+  city                String?
+  district            String?
+  state               String?   @default("Tamil Nadu")
+  pincode             String?
+  latitude            Float?
+  longitude           Float?
+  totalFees           Float?
+  paidAmount          Float?
+  balanceAmount       Float?
+  paymentDate         String?
+  paymentMode         String?
+  receiptNumber       String?
+  attendanceHistory   StudentAttendanceRecord[]
+}
+
+model StudentAttendanceRecord {
+  id         String   @id @default(cuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classDate  DateTime
+  dateString String   // "19/05/2026", "20/05/2026", etc.
+  status     String   // "Present", "Absent", "Leave"
+  createdAt  DateTime @default(now())
+}
+
+model StudentDocument {
+  id          String   @id @default(cuid())
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  documentType String
+  documentName String
+  fileUrl     String
+  issueDate   DateTime?
+  expiryDate  DateTime?
+  status      String   @default("VERIFIED")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Course {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  name           String
+  description    String?
+  courseType     String    @default("STANDARD")
+  transmission   String    @default("MANUAL")
+  vehicleType    String    @default("LMV_4W")
+  numberOfLessons Int      @default(15)
+  lessonDurationMinutes Int @default(60)
+  price          Float
+  discount       Float     @default(0)
+  taxRate        Float     @default(18.0)
+  totalFee       Float
+  validityDays   Int       @default(90)
+  status         String    @default("ACTIVE")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  packages       CoursePackage[]
+  enrollments    Enrollment[]
+}
+
+model CoursePackage {
+  id          String   @id @default(cuid())
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  bonusLessons Int     @default(0)
+  extraFeatures String?
+  price       Float
+  discount    Float    @default(0)
+  totalFee    Float
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id             String         @id @default(cuid())
+  enrollmentCode String         @unique
+  studentId      String
+  student        Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId       String
+  course         Course         @relation(fields: [courseId], references: [id])
+  packageId      String?
+  package        CoursePackage? @relation(fields: [packageId], references: [id])
+  enrollmentDate DateTime       @default(now())
+  startDate      DateTime?
+  endDate        DateTime?
+  totalFee       Float
+  discount       Float          @default(0)
+  taxAmount      Float          @default(0)
+  finalFee       Float
+  paidAmount     Float          @default(0)
+  pendingAmount  Float          @default(0)
+  totalLessons   Int
+  completedLessons Int          @default(0)
+  remainingLessons Int
+  status         String         @default("ACTIVE")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  payments       Payment[]
+  invoices       Invoice[]
+  installments   PaymentInstallment[]
+}
+
+model Instructor {
+  id               String    @id @default(cuid())
+  instructorCode   String    @unique
+  userId           String?   @unique
+  user             User?     @relation(fields: [userId], references: [id])
+  fullName         String
+  photo            String?
+  phone            String
+  email            String?
+  gender           String    @default("Male")
+  address          String?
+  area             String?
+  joiningDate      DateTime  @default(now())
+  experienceYears  Int       @default(3)
+  drivingLicence   String
+  licenceExpiry    DateTime
+  specializations  String
+  languages        String
+  workingHours     String    @default("07:00-19:00")
+  baseSalary       Float     @default(25000)
+  commissionPerLesson Float  @default(150)
+  rating           Float     @default(4.8)
+  totalReviews     Int       @default(0)
+  status           String    @default("AVAILABLE")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  assignedStudents Student[]
+  lessons          Lesson[]
+  assignedVehicles Vehicle[]
+  availabilities   InstructorAvailability[]
+  feedbacks        Feedback[]
+  commissions      Commission[]
+  attendances      Attendance[]
+}
+
+model InstructorAvailability {
+  id           String     @id @default(cuid())
+  instructorId String
+  instructor   Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  dayOfWeek    Int
+  startTime    String
+  endTime      String
+  isAvailable  Boolean    @default(true)
+}
+
+model Vehicle {
+  id                String    @id @default(cuid())
+  vehicleCode       String    @unique
+  registrationNumber String   @unique
+  make              String
+  model             String
+  year              Int
+  fuelType          String
+  transmission      String
+  color             String
+  purchaseDate      DateTime?
+  purchaseCost      Float?
+  currentKm         Int       @default(15000)
+  fuelEfficiency    Float     @default(16.5)
+  insuranceExpiry   DateTime
+  pucExpiry         DateTime
+  fitnessExpiry     DateTime
+  lastServiceDate   DateTime?
+  nextServiceDate   DateTime
+  lastServiceKm     Int       @default(10000)
+  nextServiceKm     Int       @default(20000)
+  assignedInstructorId String?
+  assignedInstructor Instructor? @relation(fields: [assignedInstructorId], references: [id])
+  status            String    @default("AVAILABLE")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  assignedStudents  Student[]
+  lessons           Lesson[]
+  maintenanceLogs   VehicleMaintenance[]
+  fuelLogs          VehicleFuelLog[]
+  expenses          VehicleExpense[]
+  documents         VehicleDocument[]
+  attendances       Attendance[]
+}
+
+model VehicleDocument {
+  id          String   @id @default(cuid())
+  vehicleId   String
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  docType     String
+  docNumber   String?
+  fileUrl     String?
+  issueDate   DateTime?
+  expiryDate  DateTime?
+  status      String   @default("VALID")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model VehicleMaintenance {
+  id             String    @id @default(cuid())
+  vehicleId      String
+  vehicle        Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  serviceType    String
+  serviceDate    DateTime
+  kmAtService    Int
+  vendorName     String
+  vendorContact  String?
+  invoiceNumber  String?
+  cost           Float
+  nextServiceDate DateTime?
+  nextServiceKm  Int?
+  notes          String?
+  status         String    @default("COMPLETED")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model VehicleFuelLog {
+  id           String   @id @default(cuid())
+  vehicleId    String
+  vehicle      Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  logDate      DateTime
+  fuelType     String
+  litres       Float
+  pricePerLitre Float
+  totalCost    Float
+  odometerKm   Int
+  fuelStation  String?
+  receiptUrl   String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model VehicleExpense {
+  id          String   @id @default(cuid())
+  vehicleId   String
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  category    String
+  amount      Float
+  expenseDate DateTime
+  description String?
+  receiptUrl  String?
+  createdAt   DateTime @default(now())
+}
+
+model Lesson {
+  id             String    @id @default(cuid())
+  lessonCode     String    @unique
+  studentId      String
+  student        Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  instructorId   String
+  instructor     Instructor @relation(fields: [instructorId], references: [id])
+  vehicleId      String
+  vehicle        Vehicle   @relation(fields: [vehicleId], references: [id])
+  lessonDate     DateTime
+  startTime      String
+  endTime        String
+  durationMinutes Int      @default(60)
+  pickupLocation String?
+  dropLocation   String?
+  lessonType     String    @default("PRACTICAL")
+  topicCovered   String?
+  notes          String?
+  status         String    @default("SCHEDULED")
+  instructorCommission Float @default(150)
+  commissionPaid Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  attendance     LessonAttendance?
+  progress       LessonProgress?
+  attendances    Attendance[]
+}
+
+model Attendance {
+  id             String      @id @default(cuid())
+  attendanceCode String      @unique @default(cuid())
+  studentId      String
+  student        Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classId        String?
+  class          Lesson?     @relation(fields: [classId], references: [id])
+  instructorId   String?
+  instructor     Instructor? @relation(fields: [instructorId], references: [id])
+  vehicleId      String?
+  vehicle        Vehicle?    @relation(fields: [vehicleId], references: [id])
+  date           DateTime
+  dateString     String?     // "19052026", "2026-05-19"
+  status         String      @default("Not Marked") // "Present", "Absent", "Leave", "Late", "Not Marked"
+  checkInTime    String?
+  checkOutTime   String?
+  remarks        String?
+  markedBy       String      @default("Front Desk Staff")
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model LessonAttendance {
+  id             String   @id @default(cuid())
+  lessonId       String   @unique
+  lesson         Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        Student  @relation(fields: [studentId], references: [id])
+  studentStatus  String   @default("PRESENT")
+  instructorStatus String @default("PRESENT")
+  checkInTime    DateTime?
+  checkOutTime   DateTime?
+  startKm        Int?
+  endKm          Int?
+  distanceKm     Float?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model LessonProgress {
+  id               String   @id @default(cuid())
+  lessonId         String   @unique
+  lesson           Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  studentId        String
+  student          Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  topicsCovered    String
+  overallScore     Int      @default(4)
+  overallSkillLevel String  @default("PRACTICING")
+  instructorNotes  String?
+  mistakesObserved String?
+  recommendations  String?
+  nextLessonFocus  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  skills           LessonSkill[]
+}
+
+model LessonSkill {
+  id            String         @id @default(cuid())
+  progressId    String
+  progress      LessonProgress @relation(fields: [progressId], references: [id], onDelete: Cascade)
+  skillName     String
+  proficiency   String         @default("LEARNING")
+  score         Int            @default(3)
+  notes         String?
+}
+
+model Payment {
+  id            String    @id @default(cuid())
+  paymentCode   String    @unique
+  studentId     String
+  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  enrollmentId  String?
+  enrollment    Enrollment? @relation(fields: [enrollmentId], references: [id])
+  invoiceId     String?
+  invoice       Invoice?  @relation(fields: [invoiceId], references: [id])
+  amount        Float
+  paymentDate   DateTime  @default(now())
+  dueDate       DateTime?
+  paymentMode   String    @default("UPI")
+  transactionId String?
+  paymentStatus String    @default("PAID")
+  receiptNumber String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  refunds       Refund[]
+}
+
+model PaymentInstallment {
+  id               String     @id @default(cuid())
+  enrollmentId     String
+  enrollment       Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  installmentNumber Int
+  dueDate          DateTime
+  amount           Float
+  paidAmount       Float      @default(0)
+  balanceAmount    Float
+  status           String     @default("PENDING")
+  reminderSent     Boolean    @default(false)
+  paidDate         DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+model Invoice {
+  id            String     @id @default(cuid())
+  invoiceNumber String     @unique
+  studentId     String
+  student       Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  enrollmentId  String?
+  enrollment    Enrollment? @relation(fields: [enrollmentId], references: [id])
+  type          String     @default("INVOICE")
+  subtotal      Float
+  discount      Float      @default(0)
+  taxRate       Float      @default(18.0)
+  taxAmount     Float      @default(0)
+  totalAmount   Float
+  paidAmount    Float      @default(0)
+  balanceAmount Float      @default(0)
+  invoiceDate   DateTime   @default(now())
+  dueDate       DateTime?
+  status        String     @default("PAID")
+  items         String
+  notes         String?
+  terms         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  payments      Payment[]
+}
+
+model Refund {
+  id              String   @id @default(cuid())
+  refundCode      String   @unique
+  studentId       String
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  paymentId       String?
+  payment         Payment? @relation(fields: [paymentId], references: [id])
+  refundReason    String
+  requestedAmount Float
+  approvedAmount  Float
+  approvedBy      String?
+  refundDate      DateTime @default(now())
+  refundMethod    String   @default("UPI")
+  status          String   @default("COMPLETED")
+  transactionRef  String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Complaint {
+  id             String    @id @default(cuid())
+  ticketCode     String    @unique
+  studentId      String
+  student        Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  category       String
+  priority       String    @default("MEDIUM")
+  title          String
+  description    String
+  assignedToId   String?
+  assignedTo     User?     @relation("AssignedComplaint", fields: [assignedToId], references: [id])
+  dueDate        DateTime?
+  status         String    @default("OPEN")
+  resolution     String?
+  resolvedAt     DateTime?
+  customerRating Int?
+  customerFeedback String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  comments       ComplaintComment[]
+}
+
+model ComplaintComment {
+  id          String    @id @default(cuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  authorName  String
+  authorRole  String
+  comment     String
+  isInternal  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+}
+
+model Feedback {
+  id                String      @id @default(cuid())
+  studentId         String
+  student           Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  instructorId      String?
+  instructor        Instructor? @relation(fields: [instructorId], references: [id])
+  instructorRating  Int         @default(5)
+  vehicleRating     Int         @default(5)
+  lessonRating      Int         @default(5)
+  schedulingRating  Int         @default(5)
+  overallRating     Int         @default(5)
+  reviewText        String?
+  isPublic          Boolean     @default(true)
+  createdAt         DateTime    @default(now())
+}
+
+model Test {
+  id            String    @id @default(cuid())
+  testCode      String    @unique
+  studentId     String
+  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  testType      String
+  testDate      DateTime
+  timeSlot      String?
+  location      String
+  instructorId  String?
+  vehicleId     String?
+  result        String    @default("PENDING")
+  score         Int?
+  failureReason String?
+  nextTestDate  DateTime?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model LicenceRecord {
+  id                  String    @id @default(cuid())
+  studentId           String?
+  student             Student?  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentName         String?
+  licenceType         String    @default("LMV")
+  applicationNumber   String?   @default("APP-RTO")
+  applicationDate     DateTime  @default(now())
+  llDate              DateTime?
+  testDate            DateTime?
+  drivingTestDate     DateTime?
+  result              String    @default("IN_PROCESS")
+  licenceNumber       String?
+  licenseStatus       String?   @default("Pending")
+  licenseReceivedDate DateTime?
+  rtoOffice           String?
+  issueDate           DateTime?
+  expiryDate          DateTime?
+  remarks             String?
+  notes               String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model UsedCarInventory {
+  id               String    @id @default(cuid())
+  carCode          String    @unique
+  registrationNumber String  @unique
+  make             String
+  model            String
+  variant          String?
+  year             Int
+  odometerKm       Int
+  fuelType         String
+  transmission     String
+  color            String
+  ownersCount      Int       @default(1)
+  insuranceType    String    @default("COMPREHENSIVE")
+  insuranceExpiry  DateTime?
+  pucExpiry        DateTime?
+  conditionScore   Int       @default(85)
+  purchasePrice    Float
+  expectedSalePrice Float
+  expectedSellingPrice Float?
+  minimumPrice     Float
+  status           String    @default("AVAILABLE")
+  photos           String?
+  primaryImage     String?
+  features         String?
+  notes            String?
+  
+  // Location & Seller info
+  location         String?   @default("Indiranagar, Bengaluru")
+  registrationYear Int?
+  sellerId         String?
+  sellerName       String?
+  sellerPhone      String?
+  sellerEmail      String?
+  sellerAddress    String?
+  carCondition     String?   @default("Excellent")
+  description      String?
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  images           UsedCarImage[]
+  leads            UsedCarLead[]
+  testDrives       UsedCarTestDrive[]
+  sale             UsedCarSale?
+  expenses         UsedCarExpense[]
+  inquiries        UsedCarBuyerInquiry[]
+}
+
+model UsedCarLead {
+  id               String    @id @default(cuid())
+  leadCode         String    @unique
+  carId            String?
+  car              UsedCarInventory? @relation(fields: [carId], references: [id])
+  buyerName        String
+  phone            String
+  whatsappNumber   String?
+  email            String?
+  location         String?
+  budget           Float?
+  preferredVehicle String?
+  financeRequired  Boolean   @default(false)
+  source           String    @default("WEBSITE")
+  salespersonName  String?
+  status           String    @default("NEW")
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  testDrives       UsedCarTestDrive[]
+}
+
+model UsedCarTestDrive {
+  id               String           @id @default(cuid())
+  testDriveCode    String           @unique
+  carId            String
+  car              UsedCarInventory @relation(fields: [carId], references: [id], onDelete: Cascade)
+  buyerLeadId      String?
+  buyerLead        UsedCarLead?     @relation(fields: [buyerLeadId], references: [id])
+  buyerName        String
+  buyerPhone       String
+  scheduledDate    DateTime
+  timeSlot         String
+  salespersonName  String
+  status           String           @default("SCHEDULED")
+  buyerFeedback    String?
+  customerNotes    String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model UsedCarExpense {
+  id          String           @id @default(cuid())
+  carId       String
+  car         UsedCarInventory @relation(fields: [carId], references: [id], onDelete: Cascade)
+  category    String
+  amount      Float
+  expenseDate DateTime         @default(now())
+  vendor      String?
+  description String
+  receiptUrl  String?
+  createdAt   DateTime         @default(now())
+}
+
+model UsedCarSale {
+  id              String           @id @default(cuid())
+  saleCode        String           @unique
+  carId           String           @unique
+  car             UsedCarInventory @relation(fields: [carId], references: [id], onDelete: Cascade)
+  buyerName       String
+  buyerPhone      String
+  buyerEmail      String?
+  buyerAddress    String?
+  salePrice       Float
+  discount        Float            @default(0)
+  bookingAmount   Float            @default(0)
+  paidAmount      Float
+  pendingAmount   Float            @default(0)
+  paymentMode     String           @default("BANK_TRANSFER")
+  saleDate        DateTime         @default(now())
+  deliveryDate    DateTime?
+  salespersonId   String?
+  salesperson     User?            @relation("SalesExecutive", fields: [salespersonId], references: [id])
+  salespersonName String
+  rtoTransferStatus String         @default("IN_PROGRESS")
+  
+  purchaseCost    Float            @default(0)
+  totalRepairs    Float            @default(0)
+  totalExpenses   Float            @default(0)
+  totalCost       Float            @default(0)
+  grossProfit     Float            @default(0)
+  profitMarginPct Float            @default(0)
+  notes           String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Expense {
+  id            String    @id @default(cuid())
+  expenseCode   String    @unique
+  category      String
+  amount        Float
+  expenseDate   DateTime  @default(now())
+  department    String?
+  vendorName    String?
+  paymentMode   String    @default("BANK_TRANSFER")
+  description   String
+  receiptUrl    String?
+  createdById   String?
+  createdBy     User?     @relation(fields: [createdById], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Employee {
+  id             String    @id @default(cuid())
+  employeeCode   String    @unique
+  userId         String?   @unique
+  user           User?     @relation(fields: [userId], references: [id])
+  fullName       String
+  phone          String
+  email          String
+  roleTitle      String
+  department     String
+  joiningDate    DateTime  @default(now())
+  monthlySalary  Float     @default(25000)
+  commissionRate Float     @default(0)
+  status         String    @default("ACTIVE")
+  idProofNumber  String?
+  panNumber      String?
+  bankAccount    String?
+  bankIfsc       String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  attendances    EmployeeAttendance[]
+  commissions    Commission[]
+}
+
+model EmployeeAttendance {
+  id           String    @id @default(cuid())
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date         DateTime
+  status       String    @default("PRESENT")
+  checkInTime  String?
+  checkOutTime String?
+  notes        String?
+  createdAt    DateTime  @default(now())
+}
+
+model Commission {
+  id           String      @id @default(cuid())
+  employeeId   String?
+  employee     Employee?   @relation(fields: [employeeId], references: [id])
+  instructorId String?
+  instructor   Instructor? @relation(fields: [instructorId], references: [id])
+  type         String
+  periodMonth  String
+  unitsCount   Int
+  ratePerUnit  Float
+  totalAmount  Float
+  status       String      @default("PENDING")
+  paidDate     DateTime?
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Referral {
+  id                String    @id @default(cuid())
+  referrerStudentId String?
+  referrerStudent   Student?  @relation("ReferrerStudent", fields: [referrerStudentId], references: [id])
+  referrerLeadId    String?
+  referrerLead      Lead?     @relation("ReferrerLead", fields: [referrerLeadId], references: [id])
+  referrerName      String
+  referrerPhone     String
+  referredName      String
+  referredPhone     String
+  referredEmail     String?
+  rewardAmount      Float     @default(500)
+  rewardStatus      String    @default("PENDING")
+  referralDate      DateTime  @default(now())
+  status            String    @default("NEW")
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Campaign {
+  id            String    @id @default(cuid())
+  name          String
+  channel       String
+  startDate     DateTime
+  endDate       DateTime?
+  budget        Float
+  spent         Float     @default(0)
+  totalLeads    Int       @default(0)
+  conversions   Int       @default(0)
+  revenue       Float     @default(0)
+  roiPercentage Float     @default(0)
+  status        String    @default("ACTIVE")
+  targetAudience String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Renewal {
+  id           String    @id @default(cuid())
+  renewalType  String
+  studentId    String?
+  student      Student?  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  dueDate      DateTime
+  daysRemaining Int      @default(0)
+  amount       Float?
+  status       String    @default("PENDING")
+  remindersCount Int     @default(0)
+  lastReminderDate DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String
+  title       String
+  message     String
+  link        String?
+  severity    String   @default("INFO")
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  userName    String   @default("System")
+  userRole    String   @default("ADMIN")
+  action      String
+  module      String
+  recordId    String?
+  recordCode  String?
+  oldValue    String?
+  newValue    String?
+  ipAddress   String?  @default("127.0.0.1")
+  timestamp   DateTime @default(now())
+}
+
+model Setting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  category    String   @default("GENERAL")
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model LeadCommunication {
+  id                String    @id @default(cuid())
+  communicationCode String    @unique @default(cuid())
+  leadId            String
+  lead              Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  communicationType String    // "Phone Call", "WhatsApp Message", "SMS", "Email", "Direct Meeting", "Other"
+  direction         String    @default("Outgoing") // "Outgoing", "Incoming"
+  speakingWithType  String?   @default("Client / Lead")
+  speakingWithName  String?
+  subject           String?
+  notes             String
+  communicationDate DateTime  @default(now())
+  communicationTime String?   // "10:30 AM"
+  nextFollowupDate  DateTime?
+  nextFollowupTime  String?   // "11:00 AM"
+  staffMember       String    @default("Front Desk Staff")
+  createdBy         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model UsedCarImage {
+  id         String           @id @default(cuid())
+  usedCarId  String
+  usedCar    UsedCarInventory @relation(fields: [usedCarId], references: [id], onDelete: Cascade)
+  imageUrl   String
+  imageType  String           @default("Front View") // Front View, Rear View, Left Side, Right Side, Interior, Dashboard, Engine, Other
+  isPrimary  Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+}
+
+model BuyerInquiry {
+  id              String   @id @default(cuid())
+  inquiryCode     String   @unique
+  buyerName       String
+  phone           String
+  email           String?
+  minBudget       Float
+  maxBudget       Float
+  preferredBrand  String?
+  preferredModel  String?
+  preferredYear   Int?
+  fuelType        String?  // Any, Petrol, Diesel, CNG, Electric
+  transmission    String?  // Any, Manual, Automatic
+  status          String   @default("ACTIVE") // ACTIVE, MATCHED, CLOSED
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model UsedCarBuyerInquiry {
+  id              String            @id @default(cuid())
+  inquiryCode     String            @unique
+  usedCarId       String?
+  usedCar         UsedCarInventory? @relation(fields: [usedCarId], references: [id], onDelete: SetNull)
+  vehicleModel    String?
+  vehiclePrice    Float?
+  buyerName       String
+  phone           String
+  email           String?
+  contactMethod   String            @default("WhatsApp") // Phone Call, WhatsApp, Email, SMS
+  message         String?
+  status          String            @default("NEW") // NEW, CONTACTED, CLOSED
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
