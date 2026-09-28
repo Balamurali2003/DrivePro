@@ -102,8 +102,11 @@ export const api = {
   createEnrollment: (data: any) => apiRequest('/enrollments', { method: 'POST', body: JSON.stringify(data) }),
 
   // Lessons
-  getLessons: (params?: Record<string, any>) => apiRequest(`/lessons?${new URLSearchParams(params)}`),
+  getLessonMetrics: (params?: Record<string, any>) => apiRequest(`/lessons/metrics${params ? '?' + new URLSearchParams(params).toString() : ''}`),
+  getStudentProgress: (studentId: string) => apiRequest(`/lessons/student/${studentId}/progress`),
+  getLessons: (params?: Record<string, any>) => apiRequest(`/lessons${params ? '?' + new URLSearchParams(params).toString() : ''}`),
   scheduleLesson: (data: any) => apiRequest('/lessons/schedule', { method: 'POST', body: JSON.stringify(data) }),
+  updateLesson: (id: string, data: any) => apiRequest(`/lessons/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   completeLesson: (id: string, data: any) => apiRequest(`/lessons/${id}/complete`, { method: 'POST', body: JSON.stringify(data) }),
 
   // Instructors
@@ -130,8 +133,11 @@ export const api = {
   recordPayment: (data: any) => apiRequest('/payments', { method: 'POST', body: JSON.stringify(data) }),
   getInvoices: () => apiRequest('/invoices'),
   createInvoice: (data: any) => apiRequest('/invoices', { method: 'POST', body: JSON.stringify(data) }),
-  getRefunds: () => apiRequest('/refunds'),
+  // Refunds
+  getRefundMetrics: (params?: Record<string, any>) => apiRequest(`/refunds/metrics${params ? '?' + new URLSearchParams(params).toString() : ''}`),
+  getRefunds: (params?: Record<string, any>) => apiRequest(`/refunds${params ? '?' + new URLSearchParams(params).toString() : ''}`),
   createRefund: (data: any) => apiRequest('/refunds', { method: 'POST', body: JSON.stringify(data) }),
+  updateRefundStatus: (id: string, data: any) => apiRequest(`/refunds/${id}/status`, { method: 'PATCH', body: JSON.stringify(data) }),
 
   // Complaints & Reviews
   getComplaints: (params?: Record<string, any>) => apiRequest(`/complaints?${new URLSearchParams(params)}`),
@@ -175,8 +181,12 @@ export const api = {
   createUsedCarExpense: (carId: string, data: any) => apiRequest(`/used-cars/${carId}/expenses`, { method: 'POST', body: JSON.stringify(data) }),
   getUsedCarLeads: () => apiRequest('/used-car-leads'),
   createUsedCarLead: (data: any) => apiRequest('/used-car-leads', { method: 'POST', body: JSON.stringify(data) }),
-  getTestDrives: () => apiRequest('/test-drives'),
+  // Test Drives
+  getTestDriveMetrics: (params?: Record<string, any>) => apiRequest(`/test-drives/metrics${params ? '?' + new URLSearchParams(params).toString() : ''}`),
+  getTestDrives: (params?: Record<string, any>) => apiRequest(`/test-drives${params ? '?' + new URLSearchParams(params).toString() : ''}`),
   scheduleTestDrive: (data: any) => apiRequest('/test-drives', { method: 'POST', body: JSON.stringify(data) }),
+  updateTestDriveStatus: (id: string, data: any) => apiRequest(`/test-drives/${id}/status`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteTestDrive: (id: string) => apiRequest(`/test-drives/${id}`, { method: 'DELETE' }),
   getUsedCarSales: () => apiRequest('/used-car-sales'),
   recordUsedCarSale: (data: any) => apiRequest('/used-car-sales', { method: 'POST', body: JSON.stringify(data) }),
 
@@ -186,16 +196,56 @@ export const api = {
   getAiInsights: () => apiRequest('/ai/insights'),
 
   // Misc
-  getExpenses: () => apiRequest('/expenses'),
+  // Operating Expenses
+  getExpenseMetrics: (params?: Record<string, any>) => apiRequest(`/expenses/metrics${params ? '?' + new URLSearchParams(params).toString() : ''}`),
+  getExpenses: (params?: Record<string, any>) => apiRequest(`/expenses${params ? '?' + new URLSearchParams(params).toString() : ''}`),
   createExpense: (data: any) => apiRequest('/expenses', { method: 'POST', body: JSON.stringify(data) }),
+  updateExpense: (id: string, data: any) => apiRequest(`/expenses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteExpense: (id: string) => apiRequest(`/expenses/${id}`, { method: 'DELETE' }),
   getEmployees: () => apiRequest('/employees'),
   getCommissions: () => apiRequest('/commissions'),
-  getCampaigns: () => apiRequest('/campaigns'),
-  getReferrals: () => apiRequest('/referrals'),
+  // Marketing Campaigns
+  getCampaignMetrics: (params?: Record<string, any>) => apiRequest(`/campaigns/metrics${params ? '?' + new URLSearchParams(params).toString() : ''}`),
+  getCampaigns: (params?: Record<string, any>) => apiRequest(`/campaigns${params ? '?' + new URLSearchParams(params).toString() : ''}`),
+  getCampaignById: (id: string) => apiRequest(`/campaigns/${id}`),
+  createCampaign: (data: any) => apiRequest('/campaigns', { method: 'POST', body: JSON.stringify(data) }),
+  updateCampaign: (id: string, data: any) => apiRequest(`/campaigns/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteCampaign: (id: string) => apiRequest(`/campaigns/${id}`, { method: 'DELETE' }),
+  // Referral Rewards
+  getReferralMetrics: (params?: Record<string, any>) => apiRequest(`/referrals/metrics${params ? '?' + new URLSearchParams(params).toString() : ''}`),
+  getReferrals: (params?: Record<string, any>) => apiRequest(`/referrals${params ? '?' + new URLSearchParams(params).toString() : ''}`),
+  createReferral: (data: any) => apiRequest('/referrals', { method: 'POST', body: JSON.stringify(data) }),
+  updateReferral: (id: string, data: any) => apiRequest(`/referrals/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  approveReferralReward: (id: string, data?: any) => apiRequest(`/referrals/${id}/approve-reward`, { method: 'PATCH', body: JSON.stringify(data || {}) }),
+  markReferralRewardPaid: (id: string, data: any) => apiRequest(`/referrals/${id}/mark-paid`, { method: 'PATCH', body: JSON.stringify(data) }),
+  payReferralReward: (id: string, data: any) => apiRequest(`/referrals/${id}/mark-paid`, { method: 'PATCH', body: JSON.stringify(data) }),
+  cancelReferral: (id: string, data?: any) => apiRequest(`/referrals/${id}/cancel`, { method: 'PATCH', body: JSON.stringify(data || {}) }),
   getRenewals: () => apiRequest('/renewals'),
   getNotifications: () => apiRequest('/notifications'),
   markNotificationRead: (id: string) => apiRequest(`/notifications/${id}/read`, { method: 'PUT' }),
   getAuditLogs: () => apiRequest('/audit-logs'),
   getSettings: () => apiRequest('/settings'),
   updateSetting: (data: any) => apiRequest('/settings', { method: 'POST', body: JSON.stringify(data) }),
+
+  // WhatsApp Business API Communication Hub
+  getWhatsAppConfig: () => apiRequest('/whatsapp/config'),
+  getWhatsAppConversations: (params?: Record<string, any>) =>
+    apiRequest(`/whatsapp/conversations${params ? '?' + new URLSearchParams(params).toString() : ''}`),
+  getWhatsAppConversationById: (id: string) => apiRequest(`/whatsapp/conversations/${id}`),
+  getWhatsAppConversationMessages: (id: string) => apiRequest(`/whatsapp/conversations/${id}/messages`),
+  sendWhatsAppMessage: (id: string, data: { messageText: string; templateName?: string; mediaUrl?: string; mediaType?: string; caption?: string; filename?: string }) =>
+    apiRequest(`/whatsapp/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify(data) }),
+  markWhatsAppConversationRead: (id: string) =>
+    apiRequest(`/whatsapp/conversations/${id}/read`, { method: 'PATCH' }),
+  resolveWhatsAppConversation: (id: string) =>
+    apiRequest(`/whatsapp/conversations/${id}/resolve`, { method: 'PATCH' }),
+  sendWhatsAppBulk: (data: {
+    name?: string;
+    recipients: Array<{ id?: string; type: string; name: string; phone: string; course?: string; batch?: string }>;
+    messageTemplate?: string;
+    templateName?: string;
+    variables?: Record<string, string>;
+  }) => apiRequest('/whatsapp/bulk-send', { method: 'POST', body: JSON.stringify(data) }),
+  getWhatsAppBroadcasts: () => apiRequest('/whatsapp/broadcasts'),
+  getWhatsAppBroadcastById: (id: string) => apiRequest(`/whatsapp/broadcasts/${id}`),
 };

@@ -18,7 +18,7 @@ export const LoginPage: React.FC = () => {
     try {
       const ok = await login(email, password);
       if (ok) {
-        toast.success('Welcome back to DrivePro Driving Academy!');
+        toast.success('Welcome back to Sri Munis Kanna Driving School!');
         navigate('/dashboard');
       } else {
         toast.error('Invalid credentials');
@@ -52,7 +52,7 @@ export const LoginPage: React.FC = () => {
                 <Car className="w-7 h-7" />
               </div>
               <div>
-                <h1 className="text-2xl font-black text-white tracking-tight leading-none">DrivePro</h1>
+                <h1 className="text-xl font-black text-white tracking-tight leading-none">Sri Munis Kanna</h1>
                 <p className="text-xs text-sky-400 font-bold tracking-wide uppercase mt-1">Driving School ERP</p>
               </div>
             </div>
@@ -143,7 +143,7 @@ export const LoginPage: React.FC = () => {
               disabled={loading}
               className="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-brand-600/30 transition-all flex items-center justify-center gap-2 active:scale-98"
             >
-              {loading ? 'Authenticating...' : 'Sign In to DrivePro'}
+              {loading ? 'Authenticating...' : 'Sign In to Sri Munis Kanna ERP'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>

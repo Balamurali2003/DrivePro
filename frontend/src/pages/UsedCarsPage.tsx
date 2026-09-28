@@ -519,7 +519,7 @@ export const UsedCarsPage: React.FC = () => {
   const handleContactSellerWhatsApp = (car: UsedCar) => {
     const phone = (car.sellerPhone || '+91 98450 11920').replace(/\D/g, '');
     const text = encodeURIComponent(
-      `Hello ${car.sellerName || 'Seller'}, I saw your ${car.year} ${car.make} ${car.model} (${car.registrationNumber}) listed on DrivePro Pre-Owned Showroom for ₹${(car.expectedSalePrice || 0).toLocaleString()}. Is it currently available for inspection?`
+      `Hello ${car.sellerName || 'Seller'}, I saw your ${car.year} ${car.make} ${car.model} (${car.registrationNumber}) listed on Sri Munis Kanna Pre-Owned Showroom for ₹${(car.expectedSalePrice || 0).toLocaleString()}. Is it currently available for inspection?`
     );
     window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
   };
@@ -1180,7 +1180,7 @@ export const UsedCarsPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <a
-                          href={`https://wa.me/${inq.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello ${inq.buyerName}, thank you for your inquiry regarding ${inq.vehicleModel || 'the vehicle'}. I am connecting from DrivePro Showroom.`)}`}
+                          href={`https://wa.me/${inq.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello ${inq.buyerName}, thank you for your inquiry regarding ${inq.vehicleModel || 'the vehicle'}. I am connecting from Sri Munis Kanna Showroom.`)}`}
                           target="_blank"
                           rel="noreferrer"
                           className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
@@ -1864,7 +1864,7 @@ export const UsedCarsPage: React.FC = () => {
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
               <strong className="font-bold text-slate-900 block">Vehicle Description:</strong>
               <p className="text-slate-700 leading-relaxed font-medium">
-                {selectedCar.description || 'Certified vehicle verified by DrivePro mechanics with clean title and comprehensive insurance.'}
+                {selectedCar.description || 'Certified vehicle verified by Sri Munis Kanna mechanics with clean title and comprehensive insurance.'}
               </p>
             </div>
 

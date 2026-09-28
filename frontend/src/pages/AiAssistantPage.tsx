@@ -6,7 +6,7 @@ export const AiAssistantPage: React.FC = () => {
   const [messages, setMessages] = useState<any[]>([
     {
       sender: 'ai',
-      text: "👋 Hello! I am the DrivePro AI Intelligence Engine. I analyze lesson schedules, instructor availability, student learning progress, and financial forecasts in real-time. How can I assist your academy today?"
+      text: "👋 Hello! I am the Sri Munis Kanna AI Intelligence Engine. I analyze lesson schedules, instructor availability, student learning progress, and financial forecasts in real-time. How can I assist your academy today?"
     }
   ]);
   const [input, setInput] = useState('');
@@ -26,7 +26,7 @@ export const AiAssistantPage: React.FC = () => {
     setInput('');
 
     setTimeout(() => {
-      let reply = "Based on our operational data, DrivePro CRM has 40 active students, 10 on-duty instructors, and 12 fleet vehicles. Operating efficiency is at 94.2% with ₹6,20,000 projected monthly billing.";
+      let reply = "Based on our operational data, Sri Munis Kanna Driving School has 40 active students, 10 on-duty instructors, and 12 fleet vehicles. Operating efficiency is at 94.2% with ₹6,20,000 projected monthly billing.";
       if (textToSend.toLowerCase().includes('revenue')) {
         reply = "📈 Revenue Forecast: Next month enrollment demand is projected to grow by 18%, reaching approx. ₹7,30,000 in fee receipts, driven by the new Automatic LMV package.";
       } else if (textToSend.toLowerCase().includes('instructor')) {
@@ -43,7 +43,7 @@ export const AiAssistantPage: React.FC = () => {
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
           <Sparkles className="w-6 h-6 text-sky-500" />
-          DrivePro AI Intelligence & Decision Suite
+          Sri Munis Kanna AI Intelligence & Decision Suite
         </h1>
         <p className="text-xs text-slate-500 mt-0.5">Automated timetable optimization, churn risk detection, and revenue forecasting</p>
       </div>

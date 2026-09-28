@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getLeadLocations = exports.getLeadCampaigns = exports.getLeadTerritories = exports.getLeadSources = exports.getLeadsMap = exports.updateLeadStatus = exports.importLeads = exports.getLeadImportHistory = exports.getLeadImportTemplate = exports.deleteLeadCommunication = exports.updateLeadCommunication = exports.createLeadCommunication = exports.getLeadCommunications = exports.convertLeadToStudent = exports.deleteLead = exports.updateLead = exports.createLead = exports.getLeadById = exports.getLeads = void 0;
+exports.getLeadLocations = exports.getLeadCampaigns = exports.getLeadTerritories = exports.getLeadSources = exports.getLeadsMap = exports.updateLeadStatus = exports.importLeads = exports.resetLeadsData = exports.getLeadImportHistory = exports.getLeadImportTemplate = exports.deleteLeadCommunication = exports.updateLeadCommunication = exports.createLeadCommunication = exports.getLeadCommunications = exports.convertLeadToStudent = exports.deleteLead = exports.updateLead = exports.createLead = exports.getLeadById = exports.getLeads = void 0;
 exports.refreshLeadPriority = refreshLeadPriority;
 const XLSX = __importStar(require("xlsx"));
 const db_1 = require("../db");
@@ -819,6 +819,70 @@ const getLeadImportHistory = async (req, res) => {
     }
 };
 exports.getLeadImportHistory = getLeadImportHistory;
+const resetLeadsData = async (req, res) => {
+    try {
+        const result = await db_1.prisma.$transaction(async (tx) => {
+            // 1. Safely unlink any student that references a lead to protect all student records
+            const unlinkedStudents = await tx.student.updateMany({
+                where: { leadId: { not: null } },
+                data: { leadId: null }
+            });
+            // 2. Safely unlink referrals linked to leads
+            const unlinkedReferrals = await tx.referral.updateMany({
+                where: { referrerLeadId: { not: null } },
+                data: { referrerLeadId: null }
+            });
+            // 3. Delete all lead child/table records
+            const deletedCommunications = await tx.leadCommunication.deleteMany({});
+            const deletedFollowups = await tx.leadFollowup.deleteMany({});
+            const deletedActivities = await tx.leadActivity.deleteMany({});
+            const deletedStatusHistory = await tx.leadStatusHistory.deleteMany({});
+            const deletedLocationHistory = await tx.leadLocationHistory.deleteMany({});
+            const deletedImportHistory = await tx.leadImportHistory.deleteMany({});
+            // 4. Delete all leads
+            const deletedLeads = await tx.lead.deleteMany({});
+            return {
+                leads: deletedLeads.count,
+                unlinkedStudents: unlinkedStudents.count,
+                unlinkedReferrals: unlinkedReferrals.count,
+                communications: deletedCommunications.count,
+                followups: deletedFollowups.count,
+                activities: deletedActivities.count,
+                statusHistory: deletedStatusHistory.count,
+                locationHistory: deletedLocationHistory.count,
+                importHistory: deletedImportHistory.count
+            };
+        });
+        return res.json({
+            success: true,
+            message: 'All existing lead data has been removed successfully.',
+            data: result
+        });
+    }
+    catch (error) {
+        console.error('Failed to reset lead data:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Failed to reset lead data' });
+    }
+};
+exports.resetLeadsData = resetLeadsData;
+function parseFlexibleDate(val) {
+    if (!val)
+        return null;
+    if (val instanceof Date && !isNaN(val.getTime()))
+        return val;
+    const s = String(val).trim();
+    if (!s)
+        return null;
+    // If DD/MM/YYYY or DD-MM-YYYY
+    const ddmmyyyy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (ddmmyyyy) {
+        const d = new Date(Number(ddmmyyyy[3]), Number(ddmmyyyy[2]) - 1, Number(ddmmyyyy[1]));
+        if (!isNaN(d.getTime()))
+            return d;
+    }
+    const d = new Date(s);
+    return !isNaN(d.getTime()) ? d : null;
+}
 const importLeads = async (req, res) => {
     try {
         const { leads = [], fileName = 'leads_import.xlsx', mode = 'import_valid', importedBy = 'Staff', staffMappings = {} } = req.body;
@@ -868,8 +932,8 @@ const importLeads = async (req, res) => {
         let currentCodeSeq = lastLead?.leadSequence || 0;
         for (let index = 0; index < leads.length; index++) {
             const row = leads[index];
-            const name = String(row.Name || row.fullName || row.name || '').trim();
-            const rawPhone = String(row.Phone || row.phone || '').trim();
+            const name = String(row.Name || row.fullName || row.name || row['Full Name'] || row['Lead Name'] || '').trim();
+            const rawPhone = String(row.Phone || row.phone || row['Mobile'] || row['Contact'] || row['Mobile Number'] || row['Phone Number'] || '').trim();
             const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
             // Validation 1: Name and Phone required
             if (!name || !cleanPhone || cleanPhone.length < 8) {
@@ -913,10 +977,19 @@ const importLeads = async (req, res) => {
             const isDuplicateInDb = existingPhoneMap.has(cleanPhone);
             const isDuplicateInFile = seenPhonesInFile.has(cleanPhone);
             seenPhonesInFile.add(cleanPhone);
-            const rawLoc = String(row.Location || row.location || row.Address || row.address || row.Area || row.area || '').trim();
+            const rawLoc = String(row.Location || row.location || row.Address || row.address || row.Area || row.area || row['City'] || '').trim();
             const geo = geocodingService_1.GeocodingService.geocode(rawLoc);
             const leadSrc = row['Lead Source'] || row.leadSource || row.Source || row.source || 'Direct Enquiry';
-            const leadCmp = row.Campaign || row.campaign || null;
+            const leadCmp = row.Campaign || row.campaign || row.leadCampaign || row['Campaign Name'] || null;
+            const trainingReq = row['Training Requirement'] || row.trainingRequirement || row['Course'] || 'Both Licence + Driving';
+            const classPref = row['Class Preference'] || row.classPreference || row['Batch'] || 'Weekend Class';
+            const interestedVeh = row['Interested Vehicle'] || row.interestedVehicle || row.Vehicle || row.vehicle || row.Car || null;
+            const expectedJoining = parseFlexibleDate(row['Expected Joining Date'] || row.expectedJoiningDate || row.expectedJoinDate || row['Joining Date']);
+            const nextFollowUp = parseFlexibleDate(row['Next Follow-up Date'] || row.nextFollowUpAt || row['Follow-up Date'] || row.followupDate);
+            const emailVal = row.Email || row.email || row['Email ID'] || row['Email Address'] || null;
+            const notesVal = row.Notes || row.notes || row.Remarks || row.remarks || null;
+            const statusVal = row.Status || row.status || 'NEW';
+            const priorityVal = row.Priority || row.priority || 'MEDIUM';
             if (isDuplicateInDb || isDuplicateInFile) {
                 duplicateRecords++;
                 if (mode === 'update_duplicates' && isDuplicateInDb) {
@@ -926,7 +999,7 @@ const importLeads = async (req, res) => {
                         where: { id: existingId },
                         data: {
                             fullName: name,
-                            email: row.Email || row.email || undefined,
+                            email: emailVal || undefined,
                             address: row.Address || row.address || undefined,
                             area: geo.territory !== 'Unspecified' ? geo.territory : undefined,
                             location: rawLoc || undefined,
@@ -937,15 +1010,20 @@ const importLeads = async (req, res) => {
                             leadSource: leadSrc,
                             campaign: leadCmp,
                             leadCampaign: leadCmp,
-                            trainingRequirement: row['Training Requirement'] || row.trainingRequirement || 'Both Licence + Driving',
-                            classPreference: row['Class Preference'] || row.classPreference || 'Weekend Class',
-                            priority: row.Priority || row.priority || 'MEDIUM',
-                            status: row.Status || row.status || 'NEW',
+                            trainingRequirement: trainingReq,
+                            classPreference: classPref,
+                            interestedVehicle: interestedVeh || undefined,
+                            expectedJoiningDate: expectedJoining || undefined,
+                            expectedJoinDate: expectedJoining || undefined,
+                            nextFollowUpAt: nextFollowUp || undefined,
+                            priority: priorityVal,
+                            status: statusVal,
                             assignedToId: resolvedAssignedId !== undefined ? resolvedAssignedId : undefined,
-                            notes: row.Notes || row.notes || undefined,
+                            notes: notesVal || undefined,
                             updatedAt: new Date(),
                         }
                     });
+                    await refreshLeadPriority(existingId);
                     successfulRecords++;
                 }
                 continue;
@@ -953,12 +1031,10 @@ const importLeads = async (req, res) => {
             // Valid new lead with sequential continuous ID
             currentCodeSeq++;
             const leadCode = `LEAD-${String(currentCodeSeq).padStart(4, '0')}`;
-            const trainingReq = row['Training Requirement'] || row.trainingRequirement || 'Both Licence + Driving';
-            const classPref = row['Class Preference'] || row.classPreference || 'Weekend Class';
             const aiAnalysis = aiAnalyticsService_1.AiAnalyticsService.calculateLeadScore({
                 leadSource: leadSrc,
-                priority: row.Priority || row.priority || 'MEDIUM',
-                status: row.Status || row.status || 'NEW',
+                priority: priorityVal,
+                status: statusVal,
                 budget: row.Budget || row.budget || 8500,
                 trainingRequirement: trainingReq,
             });
@@ -968,7 +1044,7 @@ const importLeads = async (req, res) => {
                     leadCode,
                     fullName: name,
                     phone: rawPhone,
-                    email: row.Email || row.email || null,
+                    email: emailVal,
                     address: row.Address || row.address || null,
                     area: geo.territory !== 'Unspecified' ? geo.territory : (row.Area || row.area || 'Tirunelveli'),
                     location: rawLoc || geo.originalLocation || null,
@@ -981,14 +1057,20 @@ const importLeads = async (req, res) => {
                     leadCampaign: leadCmp,
                     trainingRequirement: trainingReq,
                     classPreference: classPref,
-                    status: row.Status || row.status || 'NEW',
-                    priority: row.Priority || row.priority || 'MEDIUM',
+                    interestedVehicle: interestedVeh,
+                    expectedJoiningDate: expectedJoining,
+                    expectedJoinDate: expectedJoining,
+                    nextFollowUpAt: nextFollowUp,
+                    status: statusVal,
+                    priority: priorityVal,
                     assignedToId: resolvedAssignedId,
-                    notes: row.Notes || row.notes || null,
+                    notes: notesVal,
                     aiScore: aiAnalysis.score,
                     aiRecommendation: aiAnalysis.recommendation,
                 }
             });
+            // Automatically recalculate and set priority score, level, and reasons
+            await refreshLeadPriority(newLead.id);
             existingPhoneMap.set(cleanPhone, newLead.id);
             successfulRecords++;
         }

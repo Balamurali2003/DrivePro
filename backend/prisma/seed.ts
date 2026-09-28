@@ -784,7 +784,7 @@ async function main() {
   }
 
   const defaultSettings = [
-    { key: 'SCHOOL_NAME', value: 'DrivePro Driving School & Academy Bengaluru', category: 'BUSINESS' },
+    { key: 'SCHOOL_NAME', value: 'Sri Munis Kanna Driving School & Academy Bengaluru', category: 'BUSINESS' },
     { key: 'GSTIN', value: '29ABCDE1234F1Z5', category: 'BILLING' },
     { key: 'CURRENCY_SYMBOL', value: '₹', category: 'BILLING' },
     { key: 'OFFICE_ADDRESS', value: '#482, 100 Feet Road, HAL 2nd Stage, Indiranagar, Bengaluru, Karnataka 560038', category: 'BUSINESS' },

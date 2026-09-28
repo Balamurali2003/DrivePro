@@ -55,7 +55,7 @@ export const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, onC
                   <Car className="w-6 h-6" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">DrivePro Driving Academy</h1>
+                  <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Sri Munis Kanna Driving School</h1>
                   <p className="text-xs text-slate-500 font-medium">Govt. Certified Driving School & RTO Hub</p>
                 </div>
               </div>
@@ -63,7 +63,7 @@ export const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, onC
                 #482, 100ft Road, HAL 2nd Stage, Indiranagar<br />
                 Bengaluru, Karnataka - 560038<br />
                 GSTIN: <span className="font-mono font-semibold">29ABCDE1234F1Z5</span><br />
-                Phone: +91 80 4123 9900 | support@drivepro.com
+                Phone: +91 80 4123 9900 | support@srimuniskanna.com
               </p>
             </div>
 
@@ -159,7 +159,7 @@ export const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, onC
           </div>
 
           <div className="text-center text-[10px] text-slate-400 border-t border-slate-100 pt-4">
-            This is a computer generated tax invoice issued by DrivePro Driving School Management ERP System.
+            This is a computer generated tax invoice issued by Sri Munis Kanna Driving School Management ERP System.
           </div>
         </div>
       </div>

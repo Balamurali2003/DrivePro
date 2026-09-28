@@ -12,7 +12,6 @@ import { StudentDetailPage } from './pages/StudentDetailPage';
 import { CoursesPage } from './pages/CoursesPage';
 import { EnrollmentsPage } from './pages/EnrollmentsPage';
 import { CalendarPage } from './pages/CalendarPage';
-import { LessonsPage } from './pages/LessonsPage';
 import { InstructorsPage } from './pages/InstructorsPage';
 import { InstructorDetailPage } from './pages/InstructorDetailPage';
 import { VehiclesPage } from './pages/VehiclesPage';
@@ -31,6 +30,14 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
 import { AttendancePage } from './pages/AttendancePage';
 
+// 6 Core Enhanced & Database-Connected Modules
+import { ReferralRewardsPage } from './pages/ReferralRewardsPage';
+import { MarketingCampaignsPage } from './pages/MarketingCampaignsPage';
+import { LessonsProgressPage } from './pages/LessonsProgressPage';
+import { RefundRequestsPage } from './pages/RefundRequestsPage';
+import { OperatingExpensesPage } from './pages/OperatingExpensesPage';
+import { TestDriveCalendarPage } from './pages/TestDriveCalendarPage';
+
 export const App: React.FC = () => {
   return (
     <Routes>
@@ -46,8 +53,14 @@ export const App: React.FC = () => {
         <Route path="leads/:id" element={<LeadDetailPage />} />
         <Route path="followups" element={<FollowupsPage />} />
         <Route path="communications" element={<CommunicationsPage />} />
-        <Route path="referrals" element={<LeadsPage />} />
-        <Route path="campaigns" element={<LeadsPage />} />
+        
+        {/* Referral Rewards (Supports both /referral-rewards and legacy /referrals) */}
+        <Route path="referral-rewards" element={<ReferralRewardsPage />} />
+        <Route path="referrals" element={<ReferralRewardsPage />} />
+
+        {/* Marketing Campaigns (Supports both /marketing-campaigns and legacy /campaigns) */}
+        <Route path="marketing-campaigns" element={<MarketingCampaignsPage />} />
+        <Route path="campaigns" element={<MarketingCampaignsPage />} />
 
         {/* Student & Training Ops */}
         <Route path="attendance" element={<AttendancePage />} />
@@ -56,7 +69,11 @@ export const App: React.FC = () => {
         <Route path="courses" element={<CoursesPage />} />
         <Route path="enrollments" element={<EnrollmentsPage />} />
         <Route path="calendar" element={<CalendarPage />} />
-        <Route path="lessons" element={<LessonsPage />} />
+
+        {/* Lessons & Progress (Supports both /lessons-progress and legacy /lessons) */}
+        <Route path="lessons-progress" element={<LessonsProgressPage />} />
+        <Route path="lessons" element={<LessonsProgressPage />} />
+
         <Route path="instructors" element={<InstructorsPage />} />
         <Route path="instructors/:id" element={<InstructorDetailPage />} />
         <Route path="tests" element={<TestsLicencesPage />} />
@@ -72,14 +89,25 @@ export const App: React.FC = () => {
         {/* Finance & ERP */}
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="invoices" element={<PaymentsPage />} />
-        <Route path="refunds" element={<PaymentsPage />} />
-        <Route path="expenses" element={<PaymentsPage />} />
+
+        {/* Refund Requests (Supports both /refund-requests and legacy /refunds) */}
+        <Route path="refund-requests" element={<RefundRequestsPage />} />
+        <Route path="refunds" element={<RefundRequestsPage />} />
+
+        {/* Operating Expenses (Supports both /operating-expenses and legacy /expenses) */}
+        <Route path="operating-expenses" element={<OperatingExpensesPage />} />
+        <Route path="expenses" element={<OperatingExpensesPage />} />
+
         <Route path="commissions" element={<InstructorsPage />} />
 
         {/* Used Car Dealership */}
         <Route path="used-cars" element={<UsedCarsPage />} />
         <Route path="used-car-leads" element={<UsedCarsPage />} />
-        <Route path="test-drives" element={<UsedCarsPage />} />
+
+        {/* Test Drive Calendar (Supports both /test-drive-calendar and legacy /test-drives) */}
+        <Route path="test-drive-calendar" element={<TestDriveCalendarPage />} />
+        <Route path="test-drives" element={<TestDriveCalendarPage />} />
+
         <Route path="used-car-sales" element={<UsedCarsPage />} />
 
         {/* Customer Support & Quality */}

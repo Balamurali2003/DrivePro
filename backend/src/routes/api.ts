@@ -1,3 +1,10 @@
+import * as refCtrl from '../controllers/referralController';
+import * as campCtrl from '../controllers/campaignController';
+import * as refundCtrl from '../controllers/refundController';
+import * as expCtrl from '../controllers/expenseController';
+import * as tdCtrl from '../controllers/testDriveController';
+import { WhatsAppWebhookController } from '../controllers/whatsappWebhookController';
+import { WhatsAppController } from '../controllers/whatsappController';
 import { Router } from 'express';
 import * as authCtrl from '../controllers/authController';
 import * as dashCtrl from '../controllers/dashboardController';
@@ -103,8 +110,11 @@ router.get('/enrollments', enrollCtrl.getEnrollments);
 router.post('/enrollments', logAudit('CREATE', 'ENROLLMENTS'), enrollCtrl.createEnrollment);
 
 // Lessons & Scheduling
+router.get('/lessons/metrics', lessonCtrl.getLessonMetrics);
+router.get('/lessons/student/:studentId/progress', lessonCtrl.getStudentProgress);
 router.get('/lessons', lessonCtrl.getLessons);
 router.post('/lessons/schedule', logAudit('SCHEDULE', 'LESSONS'), lessonCtrl.scheduleLesson);
+router.put('/lessons/:id', logAudit('UPDATE', 'LESSONS'), lessonCtrl.updateLesson);
 router.post('/lessons/:id/complete', logAudit('COMPLETE', 'LESSONS'), lessonCtrl.completeLesson);
 
 // Instructors
@@ -131,8 +141,11 @@ router.get('/payments', payCtrl.getPayments);
 router.post('/payments', logAudit('CREATE', 'PAYMENTS'), payCtrl.recordPayment);
 router.get('/invoices', payCtrl.getInvoices);
 router.post('/invoices', logAudit('CREATE', 'INVOICES'), payCtrl.createInvoice);
-router.get('/refunds', payCtrl.getRefunds);
-router.post('/refunds', logAudit('CREATE', 'REFUNDS'), payCtrl.createRefund);
+// Refund Requests Hub
+router.get('/refunds/metrics', refundCtrl.getRefundMetrics);
+router.get('/refunds', refundCtrl.getRefunds);
+router.post('/refunds', logAudit('CREATE', 'REFUNDS'), refundCtrl.createRefund);
+router.patch('/refunds/:id/status', logAudit('UPDATE_STATUS', 'REFUNDS'), refundCtrl.updateRefundStatus);
 
 // Complaints & Reviews
 router.get('/complaints', compCtrl.getComplaints);
@@ -174,8 +187,12 @@ router.get('/buyer-inquiries/:id/matching', usedCarCtrl.getMatchingCarsForInquir
 router.post('/used-cars/:id/expenses', logAudit('CREATE_EXPENSE', 'USED_CARS'), usedCarCtrl.createUsedCarExpense);
 router.get('/used-car-leads', usedCarCtrl.getUsedCarLeads);
 router.post('/used-car-leads', logAudit('CREATE_LEAD', 'USED_CARS'), usedCarCtrl.createUsedCarLead);
-router.get('/test-drives', usedCarCtrl.getTestDrives);
-router.post('/test-drives', logAudit('SCHEDULE_TEST_DRIVE', 'USED_CARS'), usedCarCtrl.scheduleTestDrive);
+// Test Drives Calendar Hub
+router.get('/test-drives/metrics', tdCtrl.getTestDriveMetrics);
+router.get('/test-drives', tdCtrl.getTestDrives);
+router.post('/test-drives', logAudit('SCHEDULE_TEST_DRIVE', 'USED_CARS'), tdCtrl.scheduleTestDrive);
+router.patch('/test-drives/:id/status', logAudit('UPDATE_STATUS', 'USED_CARS'), tdCtrl.updateTestDriveStatus);
+router.delete('/test-drives/:id', logAudit('DELETE', 'USED_CARS'), tdCtrl.deleteTestDrive);
 router.get('/used-car-sales', usedCarCtrl.getUsedCarSales);
 router.post('/used-car-sales', logAudit('SALE', 'USED_CARS'), usedCarCtrl.recordUsedCarSale);
 
@@ -185,17 +202,52 @@ router.get('/analytics', repCtrl.getAdvancedAnalytics);
 router.get('/ai/insights', aiCtrl.getAiInsights);
 
 // Misc
-router.get('/expenses', miscCtrl.getExpenses);
-router.post('/expenses', logAudit('CREATE', 'EXPENSES'), miscCtrl.createExpense);
+// Operating Expenses Hub
+router.get('/expenses/metrics', expCtrl.getExpenseMetrics);
+router.get('/expenses', expCtrl.getExpenses);
+router.post('/expenses', logAudit('CREATE', 'EXPENSES'), expCtrl.createExpense);
+router.put('/expenses/:id', logAudit('UPDATE', 'EXPENSES'), expCtrl.updateExpense);
+router.delete('/expenses/:id', logAudit('DELETE', 'EXPENSES'), expCtrl.deleteExpense);
 router.get('/employees', miscCtrl.getEmployees);
 router.get('/commissions', miscCtrl.getCommissions);
-router.get('/campaigns', miscCtrl.getCampaigns);
-router.get('/referrals', miscCtrl.getReferrals);
+// Marketing Campaigns Hub
+router.get('/campaigns/metrics', campCtrl.getCampaignMetrics);
+router.get('/campaigns', campCtrl.getCampaigns);
+router.get('/campaigns/:id', campCtrl.getCampaignById);
+router.post('/campaigns', logAudit('CREATE', 'CAMPAIGNS'), campCtrl.createCampaign);
+router.patch('/campaigns/:id', logAudit('UPDATE', 'CAMPAIGNS'), campCtrl.updateCampaign);
+router.delete('/campaigns/:id', logAudit('DELETE', 'CAMPAIGNS'), campCtrl.deleteCampaign);
+// Referral Rewards Management
+router.get('/referrals/metrics', refCtrl.getReferralMetrics);
+router.get('/referrals', refCtrl.getReferrals);
+router.post('/referrals', logAudit('CREATE', 'REFERRALS'), refCtrl.createReferral);
+router.patch('/referrals/:id/approve-reward', logAudit('APPROVE_REWARD', 'REFERRALS'), refCtrl.approveReward);
+router.patch('/referrals/:id/mark-paid', logAudit('PAY_REWARD', 'REFERRALS'), refCtrl.markRewardPaid);
+router.patch('/referrals/:id/cancel', logAudit('CANCEL', 'REFERRALS'), refCtrl.cancelReferral);
+router.patch('/referrals/:id', logAudit('UPDATE', 'REFERRALS'), refCtrl.updateReferral);
 router.get('/renewals', miscCtrl.getRenewals);
 router.get('/notifications', miscCtrl.getNotifications);
 router.put('/notifications/:id/read', miscCtrl.markNotificationRead);
 router.get('/audit-logs', miscCtrl.getAuditLogs);
 router.get('/settings', miscCtrl.getSettings);
 router.post('/settings', logAudit('UPDATE', 'SETTINGS'), miscCtrl.updateSetting);
+
+
+// ==========================================
+// WhatsApp Business API Webhook & Two-Way Center
+// ==========================================
+router.get('/whatsapp/webhook', WhatsAppWebhookController.verifyWebhook);
+router.post('/whatsapp/webhook', WhatsAppWebhookController.handleWebhook);
+
+router.get('/whatsapp/config', WhatsAppController.getConfigStatus);
+router.get('/whatsapp/conversations', WhatsAppController.getConversations);
+router.get('/whatsapp/conversations/:id', WhatsAppController.getConversationById);
+router.get('/whatsapp/conversations/:id/messages', WhatsAppController.getConversationMessages);
+router.post('/whatsapp/conversations/:id/messages', logAudit('WHATSAPP_SEND', 'COMMUNICATIONS'), WhatsAppController.sendMessage);
+router.patch('/whatsapp/conversations/:id/read', WhatsAppController.markConversationRead);
+router.patch('/whatsapp/conversations/:id/resolve', WhatsAppController.resolveConversation);
+router.post('/whatsapp/bulk-send', logAudit('WHATSAPP_BULK_SEND', 'COMMUNICATIONS'), WhatsAppController.sendBulkMessages);
+router.get('/whatsapp/broadcasts', WhatsAppController.getBroadcasts);
+router.get('/whatsapp/broadcasts/:id', WhatsAppController.getBroadcastById);
 
 export default router;

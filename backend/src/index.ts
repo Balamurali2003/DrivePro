@@ -1,7 +1,9 @@
 import express from 'express';
+import http from 'http';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import apiRouter from './routes/api';
+import { initSocket } from './services/socketService';
 
 import path from 'path';
 import fs from 'fs';
@@ -28,9 +30,14 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'DrivePro CRM & ERP Backend API', timestamp: new Date() });
 });
 
-app.listen(PORT, () => {
+// Create HTTP server and attach Socket.IO for real-time WhatsApp & CRM events
+const server = http.createServer(app);
+initSocket(server);
+
+server.listen(PORT, () => {
   console.log(`====================================================`);
   console.log(` DrivePro CRM & ERP Backend API Server running on port ${PORT}`);
+  console.log(` Socket.IO initialized for real-time WhatsApp integration`);
   console.log(` Ready to serve all 48 modules & integrations`);
   console.log(`====================================================`);
 });

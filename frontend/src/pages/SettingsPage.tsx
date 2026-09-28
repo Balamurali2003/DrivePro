@@ -3,7 +3,7 @@ import { Settings, Building, Bell, Shield, Key, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const SettingsPage: React.FC = () => {
-  const [academyName, setAcademyName] = useState('DrivePro Motor Driving Academy');
+  const [academyName, setAcademyName] = useState('Sri Munis Kanna Driving School');
   const [phone, setPhone] = useState('+91 80 4912 3000');
   const [gstin, setGstin] = useState('29AAAAA0000A1Z5');
   const [taxRate, setTaxRate] = useState('18');

@@ -1,3 +1,4 @@
+import { LessonMetricsService } from '../services/lessonMetricsService';
 import { Request, Response } from 'express';
 import { prisma } from '../db';
 
@@ -271,6 +272,97 @@ export const completeLesson = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error completing lesson:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getLessonMetrics = async (req: Request, res: Response) => {
+  try {
+    const { range, startDate, endDate } = req.query as any;
+    const metrics = await LessonMetricsService.getMetrics({ range, startDate, endDate });
+    return res.json({ success: true, data: metrics });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getStudentProgress = async (req: Request, res: Response) => {
+  try {
+    const studentId = req.params.studentId || req.params.id;
+    const progress = await LessonMetricsService.getStudentDetailedProgress(studentId);
+    if (!progress) return res.status(404).json({ success: false, message: 'Student not found.' });
+    return res.json({ success: true, data: progress });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateLesson = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { lessonDate, startTime, endTime, status, instructorId, vehicleId, topicCovered, notes } = req.body;
+
+    const existing = await prisma.lesson.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ success: false, message: 'Lesson not found.' });
+
+    const updateData: any = {};
+    if (status) updateData.status = status;
+    if (topicCovered !== undefined) updateData.topicCovered = topicCovered;
+    if (notes !== undefined) updateData.notes = notes;
+    if (instructorId) updateData.instructorId = instructorId;
+    if (vehicleId) updateData.vehicleId = vehicleId;
+
+    if (lessonDate) updateData.lessonDate = new Date(lessonDate);
+    if (startTime) updateData.startTime = startTime;
+    if (endTime) updateData.endTime = endTime;
+
+    // If rescheduling, check conflicts
+    if ((lessonDate || startTime || instructorId || vehicleId) && (!status || status !== 'CANCELLED')) {
+      const checkDate = lessonDate ? new Date(lessonDate) : existing.lessonDate;
+      const checkStart = startTime || existing.startTime;
+      const checkInst = instructorId || existing.instructorId;
+      const checkVeh = vehicleId || existing.vehicleId;
+
+      const startOfDay = new Date(checkDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(checkDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const instConflict = await prisma.lesson.findFirst({
+        where: {
+          id: { not: id },
+          instructorId: checkInst,
+          lessonDate: { gte: startOfDay, lte: endOfDay },
+          startTime: checkStart,
+          status: { notIn: ['CANCELLED', 'NO_SHOW'] }
+        }
+      });
+      if (instConflict) {
+        return res.status(409).json({ success: false, message: 'Instructor is already booked for this slot.' });
+      }
+
+      const vehConflict = await prisma.lesson.findFirst({
+        where: {
+          id: { not: id },
+          vehicleId: checkVeh,
+          lessonDate: { gte: startOfDay, lte: endOfDay },
+          startTime: checkStart,
+          status: { notIn: ['CANCELLED', 'NO_SHOW'] }
+        }
+      });
+      if (vehConflict) {
+        return res.status(409).json({ success: false, message: 'Vehicle is already booked for this slot.' });
+      }
+    }
+
+    const updated = await prisma.lesson.update({
+      where: { id },
+      data: updateData,
+      include: { student: true, instructor: true, vehicle: true }
+    });
+
+    return res.json({ success: true, message: 'Lesson updated successfully.', data: updated });
+  } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };

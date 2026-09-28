@@ -121,7 +121,7 @@ const createInvoice = async (req, res) => {
                 items: typeof data.items === 'string' ? data.items : JSON.stringify(data.items || [
                     { description: 'Comprehensive Practical 4-Wheeler Driving Course', qty: 1, rate: subtotal, tax: taxAmount, amount: totalAmount }
                 ]),
-                notes: data.notes || 'Thank you for choosing DrivePro Driving School!',
+                notes: data.notes || 'Thank you for choosing Sri Munis Kanna Driving School!',
                 terms: 'Fees paid are non-transferable. Valid for 90 days from registration date.',
             }
         });

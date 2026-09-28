@@ -4,9 +4,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const http_1 = __importDefault(require("http"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const api_1 = __importDefault(require("./routes/api"));
+const socketService_1 = require("./services/socketService");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 dotenv_1.default.config();
@@ -25,9 +27,13 @@ app.use('/api', api_1.default);
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'DrivePro CRM & ERP Backend API', timestamp: new Date() });
 });
-app.listen(PORT, () => {
+// Create HTTP server and attach Socket.IO for real-time WhatsApp & CRM events
+const server = http_1.default.createServer(app);
+(0, socketService_1.initSocket)(server);
+server.listen(PORT, () => {
     console.log(`====================================================`);
     console.log(` DrivePro CRM & ERP Backend API Server running on port ${PORT}`);
+    console.log(` Socket.IO initialized for real-time WhatsApp integration`);
     console.log(` Ready to serve all 48 modules & integrations`);
     console.log(`====================================================`);
 });
