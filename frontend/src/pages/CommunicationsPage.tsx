@@ -999,7 +999,7 @@ export const CommunicationsPage: React.FC = () => {
                   )}
 
                   <a
-                    href="/leads"
+                    href={`${import.meta.env.BASE_URL}leads`}
                     className="w-full py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl border border-purple-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-xs"
                   >
                     <span>View Full Lead Details</span>
@@ -1041,7 +1041,7 @@ export const CommunicationsPage: React.FC = () => {
                   )}
 
                   <a
-                    href="/students"
+                    href={`${import.meta.env.BASE_URL}students`}
                     className="w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl border border-blue-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-xs"
                   >
                     <span>View Student 360</span>
@@ -1058,7 +1058,7 @@ export const CommunicationsPage: React.FC = () => {
                     This message originated from an unrecognized phone number. You can convert it into a new Lead.
                   </p>
                   <a
-                    href="/leads"
+                    href={`${import.meta.env.BASE_URL}leads`}
                     className="inline-block px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs"
                   >
                     Add as New Lead

@@ -30,6 +30,18 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'DrivePro CRM & ERP Backend API', timestamp: new Date() });
 });
 
+// Serve the built CRM frontend under /admin (the site root is reserved for the public website)
+const frontendDir = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(path.join(frontendDir, 'index.html'))) {
+  app.use('/admin', express.static(frontendDir));
+  app.get(/^\/admin(\/[^.]*)?$/, (req, res) => {
+    res.sendFile(path.join(frontendDir, 'index.html'));
+  });
+  app.get('/', (req, res) => {
+    res.redirect('/admin/');
+  });
+}
+
 // Create HTTP server and attach Socket.IO for real-time WhatsApp & CRM events
 const server = http.createServer(app);
 initSocket(server);
