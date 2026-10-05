@@ -59,7 +59,11 @@ export const LoginPage: React.FC = () => {
           <img
             src={loginCarImg}
             onError={(e) => {
-              e.currentTarget.src = '/assets/images/login-car.jpg';
+              const target = e.currentTarget;
+              if (!target.dataset.retried) {
+                target.dataset.retried = 'true';
+                target.src = `${import.meta.env.BASE_URL}assets/images/login-car.jpg`;
+              }
             }}
             alt="SMK Driving School Yellow Sports Car"
             className="w-full h-full object-cover object-center block"
