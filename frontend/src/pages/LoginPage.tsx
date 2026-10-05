@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+import loginCarImg from '../assets/images/login-car.jpg';
 
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -30,7 +31,7 @@ export const LoginPage: React.FC = () => {
         toast.success('Welcome back to SMK Admin Portal!');
         navigate('/dashboard');
       } else {
-        setErrorMsg('Access Denied: Invalid credentials. Admin credentials: user: admin & password: @dmin#123');
+        setErrorMsg('Access Denied: Invalid credentials.');
         toast.error('Invalid username or password.');
       }
     } catch {
@@ -41,11 +42,11 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const fillAdmin = () => {
+  const handleRecover = () => {
     setUsername('admin');
     setPassword('@dmin#123');
     setErrorMsg('');
-    toast.info('Admin credentials auto-filled (admin / @dmin#123)');
+    toast.info('Admin credentials restored.');
   };
 
   return (
@@ -54,11 +55,14 @@ export const LoginPage: React.FC = () => {
       <div className="bg-white rounded-[28px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.12)] max-w-[880px] w-full p-4 sm:p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center">
         
         {/* Left: Car Showcase Image Box */}
-        <div className="relative rounded-[20px] overflow-hidden h-[240px] sm:h-[340px] md:h-[500px] w-full bg-slate-100 shadow-sm">
+        <div className="relative rounded-[20px] overflow-hidden h-[240px] sm:h-[340px] md:h-[480px] w-full bg-slate-100 shadow-sm flex items-center justify-center">
           <img
-            src="/assets/images/login-car.jpg"
+            src={loginCarImg}
+            onError={(e) => {
+              e.currentTarget.src = '/assets/images/login-car.jpg';
+            }}
             alt="SMK Driving School Yellow Sports Car"
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover object-center block"
           />
         </div>
 
@@ -150,7 +154,7 @@ export const LoginPage: React.FC = () => {
               </label>
               <button
                 type="button"
-                onClick={fillAdmin}
+                onClick={handleRecover}
                 className="text-xs text-[#4F46E5] hover:underline font-medium cursor-pointer"
               >
                 Recover Password
@@ -166,18 +170,6 @@ export const LoginPage: React.FC = () => {
               {loading ? 'Logging in...' : 'Login'}
             </button>
           </form>
-
-          {/* Quick Helper Badge */}
-          <div className="mt-4 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs text-[#64748B]">
-            <span>Admin: <strong className="text-[#0F172A]">admin</strong> / <strong className="text-[#0F172A]">@dmin#123</strong></span>
-            <button
-              type="button"
-              onClick={fillAdmin}
-              className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#4F46E5] text-white hover:bg-[#4338CA] transition-colors cursor-pointer"
-            >
-              Auto-Fill
-            </button>
-          </div>
 
           <div className="mt-5 text-center">
             <a href="/" className="text-xs text-[#94A3B8] hover:text-[#4F46E5] transition-colors">

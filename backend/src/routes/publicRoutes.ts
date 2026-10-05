@@ -757,17 +757,6 @@ export function renderLayout(opts: {
             </button>
           </form>
 
-          <div class="mt-4 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs text-[#64748B]">
-            <span>Admin: <strong class="text-[#0F172A]">admin</strong> / <strong class="text-[#0F172A]">@dmin#123</strong></span>
-            <button
-              type="button"
-              id="admin-modal-fill"
-              class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#4F46E5] text-white hover:bg-[#4338CA] transition-colors cursor-pointer"
-            >
-              Auto-Fill
-            </button>
-          </div>
-
           <div class="mt-5 text-center">
             <a href="/" class="text-xs text-[#94A3B8] hover:text-[#4F46E5] transition-colors">
               &larr; Back to website
