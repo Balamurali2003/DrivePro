@@ -445,11 +445,10 @@ export function renderLayout(opts: {
   const navHtml = NAV_ITEMS.map((n) => {
     const isActive = opts.activePath === n.href;
     return `
-      <a href="${n.href}" class="relative px-4 py-2 text-sm font-medium rounded-full transition-colors ${
-      isActive ? 'text-yellow nav-active' : 'text-white/80 hover:text-white'
+      <a href="${n.href}" class="relative px-3.5 py-1.5 text-sm font-medium rounded-full transition-all ${
+      isActive ? 'text-slate-950 font-bold bg-amber-400/20 shadow-xs' : 'text-slate-700 hover:text-slate-950 hover:bg-slate-100'
     }">
         ${n.label}
-        ${isActive ? '<span class="absolute inset-0 -z-10 rounded-full bg-white/10"></span>' : ''}
       </a>
     `;
   }).join('');
@@ -597,14 +596,14 @@ export function renderLayout(opts: {
     <!-- Navbar -->
     <header id="navbar" class="fixed top-0 inset-x-0 z-50 transition-all duration-300 py-4">
       <div class="mx-auto max-w-7xl px-4">
-        <div id="navbar-inner" class="flex items-center justify-between rounded-full px-4 md:px-6 transition-all duration-300 bg-ink/40 backdrop-blur-md border border-white/10 h-16">
+        <div id="navbar-inner" class="flex items-center justify-between rounded-full px-4 md:px-6 transition-all duration-300 bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-lg shadow-slate-900/5 h-16">
           <a href="/" class="flex items-center gap-2 group">
-            <span class="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-yellow shadow-glow">
-              <span class="font-display font-bold text-ink">SMK</span>
+            <span class="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 shadow-md shadow-amber-300/40">
+              <span class="font-display font-extrabold text-slate-950 text-sm">SMK</span>
             </span>
-            <span class="hidden sm:flex flex-col leading-tight font-display navbar-logo-text text-white">
-              <span class="text-[13px] font-bold tracking-wide">SRI MUNIS KANNA</span>
-              <span class="text-[10px] uppercase tracking-[0.18em] text-yellow">Driving School &amp; Rentals</span>
+            <span class="hidden sm:flex flex-col leading-tight font-display navbar-logo-text">
+              <span class="text-[13px] font-extrabold tracking-wide text-slate-900">SRI MUNIS KANNA</span>
+              <span class="text-[10px] uppercase tracking-[0.18em] text-amber-600 font-bold">Driving School &amp; Rentals</span>
             </span>
           </a>
 
@@ -612,23 +611,25 @@ export function renderLayout(opts: {
             ${navHtml}
           </nav>
 
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2.5">
             <div class="hidden md:flex flex-col items-end">
-              <a href="tel:${SITE.phoneTel}" class="inline-flex items-center gap-1.5 text-sm font-semibold navbar-phone-text text-white">
-                ${icon('phone', 'size-3.5')} ${SITE.phone}
+              <a href="tel:${SITE.phoneTel}" class="inline-flex items-center gap-1.5 text-xs font-bold navbar-phone-text text-slate-900 hover:text-amber-600 transition-colors">
+                ${icon('phone', 'size-3 text-amber-500')} ${SITE.phone}
               </a>
-              <a href="tel:${SITE.phone2Tel}" class="text-xs font-medium opacity-80 hover:opacity-100 transition-opacity navbar-phone-text text-white">
+              <a href="tel:${SITE.phone2Tel}" class="text-[11px] font-medium text-slate-500 hover:text-slate-800 transition-opacity">
                 ${SITE.phone2}
               </a>
             </div>
-            <a href="/admin" data-admin-login class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold bg-white/15 text-white hover:bg-white/25 border border-white/25 transition-all shadow-sm cursor-pointer">
-              ${icon('shield-check', 'size-3.5 text-yellow')}
+            <a href="/admin" data-admin-login class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-sm cursor-pointer">
+              ${icon('shield-check', 'size-3.5 text-amber-400')}
               <span>Admin Portal</span>
             </a>
             <a href="/book-demo" class="hidden sm:block">
-              <button class="inline-flex items-center justify-center rounded-full px-4 py-1.5 text-sm font-semibold bg-gradient-yellow text-ink hover:opacity-90 transition-opacity">Book Demo</button>
+              <button class="inline-flex items-center justify-center rounded-full px-4 py-1.5 text-xs font-bold bg-gradient-to-r from-amber-400 via-amber-400 to-yellow-400 hover:from-amber-500 hover:to-yellow-500 text-slate-950 shadow-md shadow-amber-300/50 transition-all cursor-pointer">
+                Book Demo
+              </button>
             </a>
-            <button id="nav-toggle" class="lg:hidden rounded-full p-2 text-white hover:bg-white/10" aria-label="Toggle menu">
+            <button id="nav-toggle" class="lg:hidden rounded-full p-2 text-slate-800 hover:bg-slate-100" aria-label="Toggle menu">
               <span id="nav-icon-menu">${icon('menu', 'size-5')}</span>
               <span id="nav-icon-close" class="hidden">${icon('x', 'size-5')}</span>
             </button>
