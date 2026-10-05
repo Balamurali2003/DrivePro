@@ -660,71 +660,155 @@ export function renderLayout(opts: {
       </button>
     </div>
 
-    <!-- Interactive Admin Login Modal -->
-    <div id="admin-login-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-opacity">
-      <div class="relative w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-8 text-white animate-fade-in">
-        <button id="admin-modal-close" class="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+    <!-- Interactive Admin Login Modal (Matching CarWay & DrivePro Design) -->
+    <div id="admin-login-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md transition-opacity">
+      <div class="relative w-full max-w-4xl bg-white rounded-[28px] shadow-2xl p-4 sm:p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center text-slate-900 animate-fade-in max-h-[92vh] overflow-y-auto">
+        <button id="admin-modal-close" class="absolute top-4 right-4 z-20 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
           ${icon('x', 'size-5')}
         </button>
 
-        <div class="flex items-center gap-3 mb-5">
-          <div class="w-10 h-10 rounded-2xl bg-gradient-yellow flex items-center justify-center text-ink font-bold shadow-md">
-            ${icon('shield-check', 'size-5 text-ink')}
+        <!-- Left Column: Car Showcase -->
+        <div class="relative rounded-[22px] overflow-hidden h-[220px] sm:h-[300px] md:h-[500px] w-full bg-slate-950 shadow-inner group hidden sm:block">
+          <img
+            src="/assets/images/login-car.jpg"
+            alt="Sri Munis Kanna Driving School ERP Car"
+            class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
+          <div class="absolute top-4 left-4 right-4 flex items-center justify-between text-white text-xs">
+            <span class="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md font-semibold border border-white/20 tracking-wider">
+              SMK ERP SYSTEM
+            </span>
+            <span class="px-2.5 py-1 rounded-full bg-yellow text-slate-950 font-bold text-[10px]">
+              2026
+            </span>
           </div>
-          <div>
-            <h3 class="text-base font-bold text-white leading-tight">Sri Munis Kanna ERP</h3>
-            <p class="text-xs text-yellow font-medium">Admin &amp; Staff Login System</p>
+          <div class="absolute bottom-5 left-5 right-5 text-white">
+            <h4 class="text-lg font-black tracking-tight drop-shadow-md">
+              Sri Munis Kanna Driving School
+            </h4>
+            <p class="text-xs text-white/80 mt-0.5">
+              Secure Operations, Student ERP &amp; Car Rentals
+            </p>
           </div>
         </div>
 
-        <div class="p-3 mb-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-slate-300 flex items-center justify-between">
-          <div>
-            <p class="font-bold text-amber-300">Admin Login:</p>
-            <p>User: <code class="text-white font-bold">admin</code> | Pass: <code class="text-white font-bold">@dmin#123</code></p>
-          </div>
-          <button type="button" id="admin-modal-fill" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 transition-colors">
-            Fill
-          </button>
-        </div>
-
-        <div id="admin-modal-error" class="hidden p-3 mb-4 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-400 text-xs font-semibold"></div>
-        <div id="admin-modal-success" class="hidden p-3 mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 text-xs font-semibold"></div>
-
-        <form id="admin-login-form" class="space-y-4">
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">Username or Email</label>
-            <input
-              type="text"
-              id="admin-modal-user"
-              required
-              class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
-              placeholder="admin"
-            />
+        <!-- Right Column: Sign In Form -->
+        <div class="p-2 sm:p-4 flex flex-col justify-center">
+          <div class="flex flex-col items-center text-center mb-5">
+            <div class="flex items-center justify-center gap-2 text-indigo-600 mb-1.5">
+              <div class="w-9 h-9 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm">
+                ${icon('car', 'size-5 text-indigo-600')}
+              </div>
+              <span class="text-lg font-black tracking-tight text-slate-900">
+                DrivePro <span class="text-indigo-600">SMK</span>
+              </span>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              Sign In to your account
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Enter your details to proceed further
+            </p>
           </div>
 
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">Password</label>
-            <input
-              type="password"
-              id="admin-modal-pass"
-              required
-              class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
-              placeholder="••••••••"
-            />
+          <div class="mb-3.5 p-2.5 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-between text-xs">
+            <div class="text-indigo-950">
+              <span>Admin: <strong class="text-indigo-700 font-bold">admin</strong> / <strong class="text-indigo-700 font-bold">@dmin#123</strong></span>
+            </div>
+            <button type="button" id="admin-modal-fill" class="px-2.5 py-0.5 text-[11px] font-bold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors cursor-pointer">
+              Fill
+            </button>
           </div>
 
-          <button
-            type="submit"
-            id="admin-modal-submit"
-            class="w-full py-3 rounded-xl bg-gradient-yellow text-slate-950 font-bold text-xs shadow-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer"
-          >
-            ${icon('shield-check', 'size-4 text-slate-950')}
-            <span>Sign In to Admin ERP</span>
-          </button>
-        </form>
+          <div id="admin-modal-error" class="hidden mb-3.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-semibold"></div>
+          <div id="admin-modal-success" class="hidden mb-3.5 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-semibold"></div>
 
-        <div class="mt-4 pt-4 border-t border-slate-800 text-center text-xs text-slate-400">
-          <a href="/admin/login" class="hover:text-yellow transition-colors underline">Open Dedicated Login Page &rarr;</a>
+          <form id="admin-login-form" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Email or Username</label>
+              <div class="relative">
+                <input
+                  type="text"
+                  id="admin-modal-user"
+                  required
+                  class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:outline-none transition-all pr-9"
+                  placeholder="admin"
+                />
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                  ${icon('users', 'size-4')}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Your password</label>
+              <div class="relative">
+                <input
+                  type="password"
+                  id="admin-modal-pass"
+                  required
+                  class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:outline-none transition-all pr-9"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  id="admin-modal-toggle-pass"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  ${icon('eye', 'size-4')}
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-slate-600 pt-0.5">
+              <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                <input type="checkbox" checked class="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300" />
+                <span class="font-medium">Remember me</span>
+              </label>
+              <button type="button" id="admin-modal-recover" class="text-indigo-600 hover:underline font-medium cursor-pointer">
+                Recover Password
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              id="admin-modal-submit"
+              class="w-full py-3.5 px-4 bg-[#4F46E5] hover:bg-[#4338CA] text-white rounded-xl text-xs font-bold tracking-wide shadow-md shadow-indigo-200 transition-all flex items-center justify-center gap-2 cursor-pointer mt-1"
+            >
+              ${icon('shield-check', 'size-4 text-white')}
+              <span>Sign In</span>
+            </button>
+          </form>
+
+          <div class="relative my-4">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-slate-200"></div>
+            </div>
+            <div class="relative flex justify-center text-[10px] uppercase">
+              <span class="bg-white px-2.5 text-slate-400 font-medium">Or</span>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <button
+              type="button"
+              id="admin-modal-fill-alt"
+              class="w-full py-2 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 text-xs text-slate-700 font-medium cursor-pointer"
+            >
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span>Sign Up with Google</span>
+            </button>
+          </div>
+
+          <div class="mt-3.5 text-center text-xs text-slate-400">
+            <a href="/admin/login" class="hover:text-indigo-600 transition-colors underline">Open Dedicated Login Screen &rarr;</a>
+          </div>
         </div>
       </div>
     </div>
@@ -768,11 +852,27 @@ export function renderLayout(opts: {
         });
       }
 
-      if (fillBtn) {
-        fillBtn.addEventListener('click', function() {
-          userInput.value = 'admin';
-          passInput.value = '@dmin#123';
-          errorDiv.classList.add('hidden');
+      const togglePassBtn = document.getElementById('admin-modal-toggle-pass');
+      const fillAltBtn = document.getElementById('admin-modal-fill-alt');
+      const recoverBtn = document.getElementById('admin-modal-recover');
+
+      function fillAdminCreds() {
+        userInput.value = 'admin';
+        passInput.value = '@dmin#123';
+        errorDiv.classList.add('hidden');
+      }
+
+      if (fillBtn) fillBtn.addEventListener('click', fillAdminCreds);
+      if (fillAltBtn) fillAltBtn.addEventListener('click', fillAdminCreds);
+      if (recoverBtn) recoverBtn.addEventListener('click', fillAdminCreds);
+
+      if (togglePassBtn) {
+        togglePassBtn.addEventListener('click', function() {
+          if (passInput.type === 'password') {
+            passInput.type = 'text';
+          } else {
+            passInput.type = 'password';
+          }
         });
       }
 
