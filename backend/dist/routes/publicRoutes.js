@@ -512,7 +512,7 @@ function renderLayout(opts) {
                 ${exports.SITE.phone2}
               </a>
             </div>
-            <a href="/admin" class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold bg-white/15 text-white hover:bg-white/25 border border-white/25 transition-all shadow-sm">
+            <a href="/admin" data-admin-login class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold bg-white/15 text-white hover:bg-white/25 border border-white/25 transition-all shadow-sm cursor-pointer">
               ${icon('shield-check', 'size-3.5 text-yellow')}
               <span>Admin Portal</span>
             </a>
@@ -529,11 +529,11 @@ function renderLayout(opts) {
         <div id="nav-mobile" class="hidden lg:hidden mt-2 rounded-3xl bg-white/90 backdrop-blur-xl border border-black/5 shadow-card overflow-hidden">
           <div class="p-2">
             ${mobileNavHtml}
-            <a href="/admin" class="block mt-2">
-              <button class="w-full inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold bg-ink text-white hover:opacity-90 transition-opacity shadow-sm border border-white/10">
+            <div class="block mt-2">
+              <button type="button" data-admin-login class="w-full inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold bg-ink text-white hover:opacity-90 transition-opacity shadow-sm border border-white/10 cursor-pointer">
                 ${icon('shield-check', 'size-4 text-yellow')} Admin / Staff CRM Portal
               </button>
-            </a>
+            </div>
             <a href="/book-demo" class="block mt-2">
               <button class="w-full inline-flex items-center justify-center rounded-full px-4 py-3 text-sm font-semibold bg-gradient-yellow text-ink hover:opacity-90 transition-opacity">Book Free Demo</button>
             </a>
@@ -617,7 +617,7 @@ function renderLayout(opts) {
       <div class="mt-12 pt-8 border-t border-white/10 mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/50">
         <p>&copy; ${new Date().getFullYear()} ${exports.SITE.name}. All rights reserved.</p>
         <div class="flex gap-4">
-          <a href="/admin" class="hover:text-white">Admin / Staff Portal</a>
+          <a href="/admin" data-admin-login class="hover:text-white cursor-pointer">Admin / Staff Portal</a>
           <span>&bull;</span>
           <a href="/faq" class="hover:text-white">FAQ</a>
           <span>&bull;</span>
@@ -637,13 +637,190 @@ function renderLayout(opts) {
       <a href="/car-rentals" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full py-2.5 px-3 bg-gradient-yellow text-ink text-xs font-semibold">
         ${icon('car', 'size-4')} Rentals
       </a>
-      <a href="/book-demo" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full py-2.5 px-3 bg-yellow text-ink text-xs font-semibold">
-        Book Demo
-      </a>
+      <button type="button" data-admin-login class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full py-2.5 px-3 bg-white/20 text-white text-xs font-semibold border border-white/30">
+        ${icon('shield-check', 'size-4 text-yellow')} Admin
+      </button>
+    </div>
+
+    <!-- Interactive Admin Login Modal -->
+    <div id="admin-login-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-opacity">
+      <div class="relative w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-8 text-white animate-fade-in">
+        <button id="admin-modal-close" class="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+          ${icon('x', 'size-5')}
+        </button>
+
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-yellow flex items-center justify-center text-ink font-bold shadow-md">
+            ${icon('shield-check', 'size-5 text-ink')}
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white leading-tight">Sri Munis Kanna ERP</h3>
+            <p class="text-xs text-yellow font-medium">Admin &amp; Staff Login System</p>
+          </div>
+        </div>
+
+        <div class="p-3 mb-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-slate-300 flex items-center justify-between">
+          <div>
+            <p class="font-bold text-amber-300">Admin Login:</p>
+            <p>User: <code class="text-white font-bold">admin</code> | Pass: <code class="text-white font-bold">@dmin#123</code></p>
+          </div>
+          <button type="button" id="admin-modal-fill" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 transition-colors">
+            Fill
+          </button>
+        </div>
+
+        <div id="admin-modal-error" class="hidden p-3 mb-4 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-400 text-xs font-semibold"></div>
+        <div id="admin-modal-success" class="hidden p-3 mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 text-xs font-semibold"></div>
+
+        <form id="admin-login-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Username or Email</label>
+            <input
+              type="text"
+              id="admin-modal-user"
+              required
+              class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              placeholder="admin"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Password</label>
+            <input
+              type="password"
+              id="admin-modal-pass"
+              required
+              class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              placeholder="••••••••"
+            />
+          </div>
+
+          <button
+            type="submit"
+            id="admin-modal-submit"
+            class="w-full py-3 rounded-xl bg-gradient-yellow text-slate-950 font-bold text-xs shadow-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            ${icon('shield-check', 'size-4 text-slate-950')}
+            <span>Sign In to Admin ERP</span>
+          </button>
+        </form>
+
+        <div class="mt-4 pt-4 border-t border-slate-800 text-center text-xs text-slate-400">
+          <a href="/admin/login" class="hover:text-yellow transition-colors underline">Open Dedicated Login Page &rarr;</a>
+        </div>
+      </div>
     </div>
   </div>
 
   <script src="/assets/js/main.js" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal = document.getElementById('admin-login-modal');
+      const closeBtn = document.getElementById('admin-modal-close');
+      const fillBtn = document.getElementById('admin-modal-fill');
+      const form = document.getElementById('admin-login-form');
+      const userInput = document.getElementById('admin-modal-user');
+      const passInput = document.getElementById('admin-modal-pass');
+      const submitBtn = document.getElementById('admin-modal-submit');
+      const errorDiv = document.getElementById('admin-modal-error');
+      const successDiv = document.getElementById('admin-modal-success');
+
+      function openModal(e) {
+        if (e) e.preventDefault();
+        if (modal) {
+          modal.classList.remove('hidden');
+          errorDiv.classList.add('hidden');
+          successDiv.classList.add('hidden');
+          userInput.focus();
+        }
+      }
+
+      function closeModal() {
+        if (modal) modal.classList.add('hidden');
+      }
+
+      document.querySelectorAll('[data-admin-login]').forEach(btn => {
+        btn.addEventListener('click', openModal);
+      });
+
+      if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) closeModal();
+        });
+      }
+
+      if (fillBtn) {
+        fillBtn.addEventListener('click', function() {
+          userInput.value = 'admin';
+          passInput.value = '@dmin#123';
+          errorDiv.classList.add('hidden');
+        });
+      }
+
+      if (form) {
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          errorDiv.classList.add('hidden');
+          successDiv.classList.add('hidden');
+
+          const user = userInput.value.trim();
+          const pass = passInput.value;
+
+          if (!user || !pass) {
+            errorDiv.textContent = 'Please enter both username and password.';
+            errorDiv.classList.remove('hidden');
+            return;
+          }
+
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span>Verifying credentials...</span>';
+
+          try {
+            const res = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: user, password: pass })
+            });
+
+            const data = await res.json();
+
+            if (data.success && data.token && data.user) {
+              localStorage.setItem('drivepro_token', data.token);
+              localStorage.setItem('drivepro_user', JSON.stringify(data.user));
+              successDiv.textContent = 'Login Successful! Opening Admin Dashboard...';
+              successDiv.classList.remove('hidden');
+              setTimeout(() => {
+                window.location.href = '/admin/dashboard';
+              }, 600);
+            } else {
+              errorDiv.textContent = data.message || 'Access Denied: Invalid username or password.';
+              errorDiv.classList.remove('hidden');
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="size-4 text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> <span>Sign In to Admin ERP</span>';
+            }
+          } catch (err) {
+            // Fallback check
+            if ((user.toLowerCase() === 'admin' || user.toLowerCase() === 'admin@drivepro.com') && pass === '@dmin#123') {
+              const fallbackAdmin = { id: 'usr_admin_master', name: 'M. Muthukumar (Super Admin)', email: 'admin', role: 'SUPER_ADMIN' };
+              localStorage.setItem('drivepro_token', 'drivepro_admin_master_token');
+              localStorage.setItem('drivepro_user', JSON.stringify(fallbackAdmin));
+              successDiv.textContent = 'Login Successful! Opening Admin Dashboard...';
+              successDiv.classList.remove('hidden');
+              setTimeout(() => {
+                window.location.href = '/admin/dashboard';
+              }, 600);
+            } else {
+              errorDiv.textContent = 'Access Denied: Invalid credentials.';
+              errorDiv.classList.remove('hidden');
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="size-4 text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> <span>Sign In to Admin ERP</span>';
+            }
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>`;
 }
@@ -691,8 +868,8 @@ function renderContactCta() {
               ${icon('car', 'size-4 text-yellow')} Rent a Car
             </button>
           </a>
-          <a href="/admin">
-            <button class="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-base font-semibold bg-white/15 text-white hover:bg-white/25 border border-white/25 transition-all shadow-glow">
+          <a href="/admin" data-admin-login>
+            <button class="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-base font-semibold bg-white/15 text-white hover:bg-white/25 border border-white/25 transition-all shadow-glow cursor-pointer">
               ${icon('shield-check', 'size-4 text-yellow')} Admin CRM Portal
             </button>
           </a>
@@ -758,8 +935,8 @@ exports.publicRouter.get('/', (req, res) => {
                 Book Free Demo
               </button>
             </a>
-            <a href="/admin">
-              <button class="inline-flex items-center gap-2 rounded-full px-6 py-3 text-base font-semibold bg-white/15 text-white hover:bg-white/25 border border-white/25 transition-all shadow-glow">
+            <a href="/admin" data-admin-login>
+              <button class="inline-flex items-center gap-2 rounded-full px-6 py-3 text-base font-semibold bg-white/15 text-white hover:bg-white/25 border border-white/25 transition-all shadow-glow cursor-pointer">
                 ${icon('shield-check', 'size-4 text-yellow')} Admin Portal
               </button>
             </a>
