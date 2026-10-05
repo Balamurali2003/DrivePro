@@ -6,8 +6,8 @@ import { Role } from '../types';
 import { toast } from 'sonner';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('owner@drivepro.com');
-  const [password, setPassword] = useState('drivepro123');
+  const [email, setEmail] = useState('admin');
+  const [password, setPassword] = useState('@dmin#123');
   const [loading, setLoading] = useState(false);
   const { login, switchRoleDemo } = useAuth();
   const navigate = useNavigate();
@@ -18,10 +18,10 @@ export const LoginPage: React.FC = () => {
     try {
       const ok = await login(email, password);
       if (ok) {
-        toast.success('Welcome back to Sri Munis Kanna Driving School!');
+        toast.success('Welcome back to Sri Munis Kanna Driving School ERP!');
         navigate('/dashboard');
       } else {
-        toast.error('Invalid credentials');
+        toast.error('Invalid credentials. Use user: admin & password: @dmin#123');
       }
     } catch {
       toast.error('Authentication error');
@@ -31,12 +31,12 @@ export const LoginPage: React.FC = () => {
   };
 
   const quickDemoAccounts: { role: Role; name: string; email: string; desc: string }[] = [
+    { role: 'SUPER_ADMIN', name: 'M. Muthukumar (Super Admin)', email: 'admin', desc: 'Master Access: admin / @dmin#123' },
     { role: 'OWNER', name: 'Vikramaditya Roy', email: 'owner@drivepro.com', desc: 'Full Executive P&L & Approvals' },
     { role: 'MANAGER', name: 'Pooja Hegde', email: 'manager@drivepro.com', desc: 'Fleet Operations & Timetables' },
-    { role: 'SALES_EXECUTIVE', name: 'Rahul Sharma', email: 'sales@drivepro.com', desc: 'CRM Inquiries & Used Car Sales' },
+    { role: 'SALES_EXECUTIVE', name: 'Rahul Sharma', email: 'sales@drivepro.com', desc: 'CRM Inquiries & Car Rentals' },
     { role: 'INSTRUCTOR', name: 'Ramesh Gowda', email: 'instructor1@drivepro.com', desc: 'Lesson Logs, Attendance & Skills' },
     { role: 'ACCOUNTANT', name: 'Suresh Menon', email: 'accounts@drivepro.com', desc: 'GST Invoices, Receipts & Ledger' },
-    { role: 'STUDENT', name: 'Aarav Sharma', email: 'student1@drivepro.com', desc: 'Self-Service Progress & Radar' },
   ];
 
   return (
@@ -53,26 +53,44 @@ export const LoginPage: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-xl font-black text-white tracking-tight leading-none">Sri Munis Kanna</h1>
-                <p className="text-xs text-sky-400 font-bold tracking-wide uppercase mt-1">Driving School ERP</p>
+                <p className="text-xs text-sky-400 font-bold tracking-wide uppercase mt-1">Driving School &amp; Rentals ERP</p>
               </div>
             </div>
 
-            <h2 className="text-xl font-bold text-white mb-2">Commercial Driving School Management</h2>
+            <h2 className="text-xl font-bold text-white mb-2">Admin &amp; Staff Management Portal</h2>
             <p className="text-xs text-slate-400 leading-relaxed mb-6">
-              Manage complete lifecycle from Leads → Registration → Instructor & Fleet Allocation → Scheduling → 17-Skill Radar → RTO Licences → Billing → Used Car Showroom.
+              Manage complete operations: Leads → Student Admissions → Instructor &amp; Fleet Allocation → Scheduling → RTO Licences → Billing → Car Rentals.
             </p>
 
+            <div className="p-3.5 mb-5 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+              <div className="flex items-center gap-2 text-amber-400 text-xs font-bold mb-1">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Default Admin Login:</span>
+              </div>
+              <p className="text-xs text-slate-300">Username: <code className="text-amber-300 font-bold">admin</code></p>
+              <p className="text-xs text-slate-300">Password: <code className="text-amber-300 font-bold">@dmin#123</code></p>
+            </div>
+
             <div className="space-y-3">
-              <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">1-Click Demo Logins:</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">1-Click Role Logins:</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {quickDemoAccounts.map((acc) => (
                   <button
                     key={acc.role}
                     type="button"
                     onClick={() => {
-                      switchRoleDemo(acc.role);
-                      toast.success(`Logged in as ${acc.name} (${acc.role})`);
-                      navigate('/dashboard');
+                      if (acc.email === 'admin') {
+                        setEmail('admin');
+                        setPassword('@dmin#123');
+                        login('admin', '@dmin#123').then(() => {
+                          toast.success('Logged in as Super Admin (M. Muthukumar)');
+                          navigate('/dashboard');
+                        });
+                      } else {
+                        switchRoleDemo(acc.role);
+                        toast.success(`Logged in as ${acc.name} (${acc.role})`);
+                        navigate('/dashboard');
+                      }
                     }}
                     className="text-left p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 hover:border-brand-500/50 transition-all text-xs group"
                   >
@@ -89,26 +107,26 @@ export const LoginPage: React.FC = () => {
 
           <div className="pt-6 border-t border-slate-800/80 flex items-center gap-2 text-[11px] text-slate-500">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>ISO 9001 Certified Driving Academy SaaS Architecture</span>
+            <span>Sri Munis Kanna Driving School ERP</span>
           </div>
         </div>
 
         <div className="p-8 md:p-10 flex flex-col justify-center bg-slate-900">
-          <h3 className="text-lg font-bold text-white mb-1">Sign In to Dashboard</h3>
-          <p className="text-xs text-slate-400 mb-6">Enter your authorized staff or student credentials</p>
+          <h3 className="text-lg font-bold text-white mb-1">Sign In to Admin Portal</h3>
+          <p className="text-xs text-slate-400 mb-6">Enter authorized admin or staff credentials</p>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5">Email Address</label>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">Admin Username or Email</label>
               <div className="relative">
                 <UserCheck className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder:text-slate-600 focus:ring-2 focus:ring-brand-500 focus:border-transparent focus:outline-none"
-                  placeholder="name@drivepro.com"
+                  placeholder="admin or email@domain.com"
                 />
               </div>
             </div>
@@ -133,8 +151,8 @@ export const LoginPage: React.FC = () => {
                 <input type="checkbox" defaultChecked className="rounded border-slate-700 bg-slate-950 text-brand-600" />
                 <span>Remember session</span>
               </label>
-              <a href="#reset" onClick={(e) => { e.preventDefault(); toast.info('Default password for all seeded accounts is: drivepro123'); }} className="text-brand-400 hover:underline">
-                Forgot password?
+              <a href="/" className="text-brand-400 hover:underline">
+                &larr; Back to Website
               </a>
             </div>
 
