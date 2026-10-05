@@ -671,6 +671,7 @@ export function renderLayout(opts: {
         <div class="relative rounded-[20px] overflow-hidden h-[240px] sm:h-[340px] md:h-[500px] w-full bg-slate-100 shadow-sm hidden sm:block">
           <img
             src="/assets/images/login-car.jpg"
+            onerror="if (!this.dataset.retried) { this.dataset.retried = '1'; this.src = '/admin/assets/images/login-car.jpg'; }"
             alt="SMK Driving School Yellow Sports Car"
             class="w-full h-full object-cover object-center"
           />
@@ -866,7 +867,7 @@ export function renderLayout(opts: {
               errorDiv.textContent = data.message || 'Access Denied: Invalid username or password.';
               errorDiv.classList.remove('hidden');
               submitBtn.disabled = false;
-              submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="size-4 text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> <span>Sign In to Admin ERP</span>';
+              submitBtn.innerHTML = '<span>Login</span>';
             }
           } catch (err) {
             // Fallback check
@@ -883,7 +884,7 @@ export function renderLayout(opts: {
               errorDiv.textContent = 'Access Denied: Invalid credentials.';
               errorDiv.classList.remove('hidden');
               submitBtn.disabled = false;
-              submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="size-4 text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> <span>Sign In to Admin ERP</span>';
+              submitBtn.innerHTML = '<span>Login</span>';
             }
           }
         });
