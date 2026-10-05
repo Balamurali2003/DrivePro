@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Navigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { GlobalSearchModal } from './GlobalSearchModal';
@@ -8,10 +9,15 @@ import { NotificationDrawer } from './NotificationDrawer';
 import { Toaster } from 'sonner';
 
 export const Layout: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
   const [searchOpen, setSearchOpen] = useState(false);
   const [quickActionOpen, setQuickActionOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <div className="flex min-h-screen bg-[#F5F6F8] text-slate-900 font-sans antialiased overflow-x-hidden">

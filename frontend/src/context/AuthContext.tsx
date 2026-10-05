@@ -25,9 +25,9 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('drivepro_user');
-    return saved ? JSON.parse(saved) : defaultUser;
+    return saved ? JSON.parse(saved) : null;
   });
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('drivepro_token') || 'demo_token_2026');
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('drivepro_token') || null);
 
   useEffect(() => {
     if (user) {
@@ -40,23 +40,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, pass: string) => {
     try {
       const res = await api.login({ email, password: pass });
-      if (res.success) {
+      if (res && res.success && res.token && res.user) {
         setUser(res.user);
         setToken(res.token);
         localStorage.setItem('drivepro_token', res.token);
+        localStorage.setItem('drivepro_user', JSON.stringify(res.user));
         return true;
       }
       return false;
     } catch {
-      // Fallback demo login
-      setUser({
-        id: 'usr_1',
-        name: email.includes('sales') ? 'Rahul Sharma' : 'Vikramaditya Roy',
-        email,
-        role: email.includes('sales') ? 'SALES_EXECUTIVE' : 'OWNER',
-      });
-      setToken('demo_token');
-      return true;
+      // Fallback check ONLY for specified Master Admin credentials
+      const cleanUser = email.trim().toLowerCase();
+      if ((cleanUser === 'admin' || cleanUser === 'admin@drivepro.com' || cleanUser === 'admin@nellaimuniskanna.com') && pass === '@dmin#123') {
+        const adminUser: User = {
+          id: 'usr_admin_master',
+          name: 'M. Muthukumar (Super Admin)',
+          email: 'admin',
+          role: 'SUPER_ADMIN',
+          avatar: '/assets/images/owner.jpg',
+        };
+        setUser(adminUser);
+        setToken('drivepro_admin_master_token');
+        localStorage.setItem('drivepro_token', 'drivepro_admin_master_token');
+        localStorage.setItem('drivepro_user', JSON.stringify(adminUser));
+        return true;
+      }
+      return false;
     }
   };
 

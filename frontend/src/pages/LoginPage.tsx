@@ -6,38 +6,45 @@ import { Role } from '../types';
 import { toast } from 'sonner';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('admin');
-  const [password, setPassword] = useState('@dmin#123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, switchRoleDemo } = useAuth();
+  const [errorMsg, setErrorMsg] = useState('');
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
+    if (!email.trim() || !password) {
+      setErrorMsg('Please enter both username/email and password.');
+      toast.error('Please enter both username/email and password.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const ok = await login(email, password);
+      const ok = await login(email.trim(), password);
       if (ok) {
-        toast.success('Welcome back to Sri Munis Kanna Driving School ERP!');
+        toast.success('Authentication successful! Welcome to Sri Munis Kanna Admin ERP.');
         navigate('/dashboard');
       } else {
-        toast.error('Invalid credentials. Use user: admin & password: @dmin#123');
+        setErrorMsg('Access Denied: Invalid username or password. Only authorized admins can login.');
+        toast.error('Access Denied: Invalid username or password.');
       }
     } catch {
-      toast.error('Authentication error');
+      setErrorMsg('Authentication service unavailable. Please check your network or credentials.');
+      toast.error('Authentication error.');
     } finally {
       setLoading(false);
     }
   };
 
-  const quickDemoAccounts: { role: Role; name: string; email: string; desc: string }[] = [
-    { role: 'SUPER_ADMIN', name: 'M. Muthukumar (Super Admin)', email: 'admin', desc: 'Master Access: admin / @dmin#123' },
-    { role: 'OWNER', name: 'Vikramaditya Roy', email: 'owner@drivepro.com', desc: 'Full Executive P&L & Approvals' },
-    { role: 'MANAGER', name: 'Pooja Hegde', email: 'manager@drivepro.com', desc: 'Fleet Operations & Timetables' },
-    { role: 'SALES_EXECUTIVE', name: 'Rahul Sharma', email: 'sales@drivepro.com', desc: 'CRM Inquiries & Car Rentals' },
-    { role: 'INSTRUCTOR', name: 'Ramesh Gowda', email: 'instructor1@drivepro.com', desc: 'Lesson Logs, Attendance & Skills' },
-    { role: 'ACCOUNTANT', name: 'Suresh Menon', email: 'accounts@drivepro.com', desc: 'GST Invoices, Receipts & Ledger' },
-  ];
+  const fillAdminCredentials = () => {
+    setEmail('admin');
+    setPassword('@dmin#123');
+    setErrorMsg('');
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 selection:bg-brand-500 selection:text-white relative overflow-hidden">
@@ -57,57 +64,43 @@ export const LoginPage: React.FC = () => {
               </div>
             </div>
 
-            <h2 className="text-xl font-bold text-white mb-2">Admin &amp; Staff Management Portal</h2>
+            <h2 className="text-xl font-bold text-white mb-2">Restricted Admin Portal</h2>
             <p className="text-xs text-slate-400 leading-relaxed mb-6">
-              Manage complete operations: Leads → Student Admissions → Instructor &amp; Fleet Allocation → Scheduling → RTO Licences → Billing → Car Rentals.
+              Access to student records, fleet scheduling, RTO licence applications, invoices, accounting, and system configurations is strictly restricted to authenticated personnel.
             </p>
 
-            <div className="p-3.5 mb-5 rounded-2xl bg-amber-500/10 border border-amber-500/30">
-              <div className="flex items-center gap-2 text-amber-400 text-xs font-bold mb-1">
-                <ShieldCheck className="w-4 h-4" />
-                <span>Default Admin Login:</span>
+            <div className="p-4 mb-5 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-amber-400 text-xs font-bold">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Authorized Admin Credentials:</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={fillAdminCredentials}
+                  className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-colors"
+                >
+                  Fill Admin Form
+                </button>
               </div>
-              <p className="text-xs text-slate-300">Username: <code className="text-amber-300 font-bold">admin</code></p>
+              <p className="text-xs text-slate-300">User: <code className="text-amber-300 font-bold">admin</code></p>
               <p className="text-xs text-slate-300">Password: <code className="text-amber-300 font-bold">@dmin#123</code></p>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">1-Click Role Logins:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {quickDemoAccounts.map((acc) => (
-                  <button
-                    key={acc.role}
-                    type="button"
-                    onClick={() => {
-                      if (acc.email === 'admin') {
-                        setEmail('admin');
-                        setPassword('@dmin#123');
-                        login('admin', '@dmin#123').then(() => {
-                          toast.success('Logged in as Super Admin (M. Muthukumar)');
-                          navigate('/dashboard');
-                        });
-                      } else {
-                        switchRoleDemo(acc.role);
-                        toast.success(`Logged in as ${acc.name} (${acc.role})`);
-                        navigate('/dashboard');
-                      }
-                    }}
-                    className="text-left p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 hover:border-brand-500/50 transition-all text-xs group"
-                  >
-                    <div className="flex items-center justify-between font-bold text-white group-hover:text-brand-400">
-                      <span>{acc.role}</span>
-                      <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                    <p className="text-[10px] text-slate-400 truncate">{acc.name}</p>
-                  </button>
-                ))}
+            <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-slate-300 font-semibold">
+                <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
+                <span>Security &amp; Access Policy</span>
               </div>
+              <p>• Unauthorized access attempts are monitored and logged.</p>
+              <p>• Sessions expire automatically after inactivity.</p>
+              <p>• For staff credential resets, contact the Master Admin.</p>
             </div>
           </div>
 
           <div className="pt-6 border-t border-slate-800/80 flex items-center gap-2 text-[11px] text-slate-500">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Sri Munis Kanna Driving School ERP</span>
+            <span>Sri Munis Kanna Driving School ERP Security Gateway</span>
           </div>
         </div>
 
@@ -116,6 +109,13 @@ export const LoginPage: React.FC = () => {
           <p className="text-xs text-slate-400 mb-6">Enter authorized admin or staff credentials</p>
 
           <form onSubmit={handleLogin} className="space-y-4">
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium flex items-start gap-2">
+                <span className="font-bold">Error:</span>
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-1.5">Admin Username or Email</label>
               <div className="relative">

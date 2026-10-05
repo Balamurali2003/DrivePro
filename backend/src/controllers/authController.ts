@@ -89,32 +89,6 @@ export const login = async (req: Request, res: Response) => {
       }
     }
 
-    // Standard fallback for seeded admin/owner accounts
-    if (password === 'drivepro123' || password === '@dmin#123') {
-      const role = identifier.includes('sales') ? 'SALES_EXECUTIVE' : identifier.includes('instructor') ? 'INSTRUCTOR' : 'OWNER';
-      const fallbackUser = {
-        id: `usr_${identifier}`,
-        name: identifier === 'admin' ? 'M. Muthukumar (Admin)' : 'Vikramaditya Roy (Owner)',
-        email: identifier,
-        role: role,
-        avatar: '/assets/images/owner.jpg',
-        phone: '+91 94877 19904',
-      };
-
-      const token = jwt.sign(
-        { id: fallbackUser.id, email: fallbackUser.email, role: fallbackUser.role, name: fallbackUser.name },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-
-      return res.json({
-        success: true,
-        message: 'Login successful',
-        token,
-        user: fallbackUser,
-      });
-    }
-
     return res.status(401).json({ success: false, message: 'Invalid username or password' });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
