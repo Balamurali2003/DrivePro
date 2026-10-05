@@ -8,6 +8,7 @@ const http_1 = __importDefault(require("http"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const api_1 = __importDefault(require("./routes/api"));
+const publicRoutes_1 = require("./routes/publicRoutes");
 const socketService_1 = require("./services/socketService");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
@@ -27,6 +28,22 @@ app.use('/api', api_1.default);
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'DrivePro CRM & ERP Backend API', timestamp: new Date() });
 });
+// Static assets for landing page and uploads
+const publicDir = path_1.default.join(__dirname, '../public');
+if (fs_1.default.existsSync(publicDir)) {
+    app.use('/assets', express_1.default.static(path_1.default.join(publicDir, 'assets')));
+    app.use(express_1.default.static(publicDir));
+}
+// Serve the built CRM frontend under /admin
+const frontendDir = path_1.default.join(__dirname, '../../frontend/dist');
+if (fs_1.default.existsSync(path_1.default.join(frontendDir, 'index.html'))) {
+    app.use('/admin', express_1.default.static(frontendDir));
+    app.get(/^\/admin(\/[^.]*)?$/, (req, res) => {
+        res.sendFile(path_1.default.join(frontendDir, 'index.html'));
+    });
+}
+// Public website routes (Landing page, Car Rentals, Courses, About, Blog, Contact, Enquiry)
+app.use('/', publicRoutes_1.publicRouter);
 // Create HTTP server and attach Socket.IO for real-time WhatsApp & CRM events
 const server = http_1.default.createServer(app);
 (0, socketService_1.initSocket)(server);
