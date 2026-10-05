@@ -2,57 +2,18 @@
 (function () {
   const navbar = document.getElementById('navbar');
   const inner  = document.getElementById('navbar-inner');
-  const logoText  = document.querySelectorAll('.navbar-logo-text');
-  const phoneText = document.querySelectorAll('.navbar-phone-text');
-  const navActive = document.querySelectorAll('.nav-active');
 
   function onScroll() {
     const scrolled = window.scrollY > 16;
 
     if (scrolled) {
       navbar.classList.replace('py-4', 'py-2');
-      inner.classList.remove('bg-ink/40', 'backdrop-blur-md', 'border', 'border-white/10', 'h-16');
-      inner.classList.add('h-14', 'shadow-card');
-      inner.style.background = 'rgba(255,255,255,0.7)';
-      inner.style.backdropFilter = 'blur(20px) saturate(160%)';
-      inner.style.border = '1px solid rgba(20,20,20,0.06)';
-
-      logoText.forEach(el => {
-        el.classList.remove('text-white');
-        el.classList.add('text-ink');
-      });
-      phoneText.forEach(el => {
-        el.classList.remove('text-white');
-        el.classList.add('text-ink');
-      });
-      navActive.forEach(el => {
-        el.classList.remove('text-yellow');
-        el.classList.add('text-ink');
-        const pill = el.querySelector('span');
-        if (pill) { pill.classList.remove('bg-white/10'); pill.classList.add('bg-secondary'); }
-      });
+      inner.classList.replace('h-16', 'h-14');
+      inner.classList.add('shadow-xl');
     } else {
       navbar.classList.replace('py-2', 'py-4');
-      inner.classList.remove('h-14', 'shadow-card');
-      inner.classList.add('bg-ink/40', 'backdrop-blur-md', 'border', 'border-white/10', 'h-16');
-      inner.style.background = '';
-      inner.style.backdropFilter = '';
-      inner.style.border = '';
-
-      logoText.forEach(el => {
-        el.classList.add('text-white');
-        el.classList.remove('text-ink');
-      });
-      phoneText.forEach(el => {
-        el.classList.add('text-white');
-        el.classList.remove('text-ink');
-      });
-      navActive.forEach(el => {
-        el.classList.add('text-yellow');
-        el.classList.remove('text-ink');
-        const pill = el.querySelector('span');
-        if (pill) { pill.classList.add('bg-white/10'); pill.classList.remove('bg-secondary'); }
-      });
+      inner.classList.replace('h-14', 'h-16');
+      inner.classList.remove('shadow-xl');
     }
   }
 
