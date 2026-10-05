@@ -530,11 +530,12 @@ export function renderLayout(opts: {
                 ${SITE.phone2}
               </a>
             </div>
+            <a href="/admin" class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold bg-white/15 text-white hover:bg-white/25 border border-white/25 transition-all shadow-sm">
+              ${icon('shield-check', 'size-3.5 text-yellow')}
+              <span>Admin Portal</span>
+            </a>
             <a href="/book-demo" class="hidden sm:block">
               <button class="inline-flex items-center justify-center rounded-full px-4 py-1.5 text-sm font-semibold bg-gradient-yellow text-ink hover:opacity-90 transition-opacity">Book Demo</button>
-            </a>
-            <a href="/admin" class="hidden xl:inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold glass text-white hover:bg-white/10 transition-colors">
-              CRM Portal
             </a>
             <button id="nav-toggle" class="lg:hidden rounded-full p-2 text-white hover:bg-white/10" aria-label="Toggle menu">
               <span id="nav-icon-menu">${icon('menu', 'size-5')}</span>
@@ -546,11 +547,13 @@ export function renderLayout(opts: {
         <div id="nav-mobile" class="hidden lg:hidden mt-2 rounded-3xl bg-white/90 backdrop-blur-xl border border-black/5 shadow-card overflow-hidden">
           <div class="p-2">
             ${mobileNavHtml}
+            <a href="/admin" class="block mt-2">
+              <button class="w-full inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold bg-ink text-white hover:opacity-90 transition-opacity shadow-sm border border-white/10">
+                ${icon('shield-check', 'size-4 text-yellow')} Admin / Staff CRM Portal
+              </button>
+            </a>
             <a href="/book-demo" class="block mt-2">
               <button class="w-full inline-flex items-center justify-center rounded-full px-4 py-3 text-sm font-semibold bg-gradient-yellow text-ink hover:opacity-90 transition-opacity">Book Free Demo</button>
-            </a>
-            <a href="/admin" class="block mt-2">
-              <button class="w-full inline-flex items-center justify-center rounded-full px-4 py-2.5 text-xs font-semibold bg-ink text-white hover:opacity-90 transition-opacity">Staff CRM Login</button>
             </a>
           </div>
         </div>
@@ -708,6 +711,11 @@ export function renderContactCta(): string {
               ${icon('car', 'size-4 text-yellow')} Rent a Car
             </button>
           </a>
+          <a href="/admin">
+            <button class="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-base font-semibold bg-white/15 text-white hover:bg-white/25 border border-white/25 transition-all shadow-glow">
+              ${icon('shield-check', 'size-4 text-yellow')} Admin CRM Portal
+            </button>
+          </a>
         </div>
       </div>
     </section>
@@ -769,6 +777,11 @@ publicRouter.get('/', (req: Request, res: Response) => {
             <a href="/book-demo">
               <button class="inline-flex items-center gap-2 rounded-full px-6 py-3 text-base font-semibold glass text-white hover:bg-white/10 transition-colors">
                 Book Free Demo
+              </button>
+            </a>
+            <a href="/admin">
+              <button class="inline-flex items-center gap-2 rounded-full px-6 py-3 text-base font-semibold bg-white/15 text-white hover:bg-white/25 border border-white/25 transition-all shadow-glow">
+                ${icon('shield-check', 'size-4 text-yellow')} Admin Portal
               </button>
             </a>
           </div>
