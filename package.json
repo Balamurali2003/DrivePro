@@ -1,0 +1,26 @@
+{
+  "name": "drivepro-crm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DrivePro CRM & ERP System with Sri Munis Kanna Driving School & Car Rentals Portal",
+  "scripts": {
+    "dev": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build": "npm --prefix backend run prisma:generate && npm --prefix backend run build && npm --prefix frontend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build",
+    "prisma:generate": "npm --prefix backend run prisma:generate",
+    "prisma:push": "npm --prefix backend run prisma:push",
+    "start": "node server.js",
+    "start:backend": "node backend/dist/index.js",
+    "postinstall": "npm --prefix backend run prisma:generate || true"
+  },
+  "keywords": [
+    "driving-school-crm",
+    "car-rentals",
+    "drivepro",
+    "erp"
+  ],
+  "author": "DrivePro / Sri Munis Kanna",
+  "license": "ISC"
+}

@@ -433,9 +433,8 @@ function renderLayout(opts) {
     const navHtml = exports.NAV_ITEMS.map((n) => {
         const isActive = opts.activePath === n.href;
         return `
-      <a href="${n.href}" class="relative px-4 py-2 text-sm font-medium rounded-full transition-colors ${isActive ? 'text-yellow nav-active' : 'text-white/80 hover:text-white'}">
+      <a href="${n.href}" class="relative px-3.5 py-1.5 text-sm font-medium rounded-full transition-all ${isActive ? 'text-slate-950 font-bold bg-amber-400/20 shadow-xs' : 'text-slate-700 hover:text-slate-950 hover:bg-slate-100'}">
         ${n.label}
-        ${isActive ? '<span class="absolute inset-0 -z-10 rounded-full bg-white/10"></span>' : ''}
       </a>
     `;
     }).join('');
@@ -473,14 +472,105 @@ function renderLayout(opts) {
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/assets/css/styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#EEF2FF', 100: '#E0E7FF', 500: '#6366F1', 600: '#4F46E5', 700: '#4338CA' }
+          }
+        }
+      }
+    }
+  </script>
 
   <style>
     .pagination { display:flex; align-items:center; justify-content:center; gap:4px; flex-wrap:wrap; }
     .pg-btn { display:inline-flex; align-items:center; justify-content:center; min-width:36px; height:36px; padding:0 4px; border-radius:8px; font-size:14px; font-weight:500; color:#6b7280; text-decoration:none; transition:background .15s, color .15s; }
     .pg-btn:hover { background:#fff; color:#111; }
     .pg-current { background:#FBBF24; color:#111 !important; font-weight:600; pointer-events:none; }
+
+    /* Dedicated Standalone Styles for Admin Modal */
+    #admin-login-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    #admin-login-modal.hidden {
+      display: none !important;
+    }
+    .admin-modal-card {
+      position: relative;
+      width: 100%;
+      max-width: 880px;
+      background: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      padding: 1.5rem 2rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.25rem;
+      align-items: center;
+      color: #0f172a;
+      max-height: 94vh;
+      overflow-y: auto;
+    }
+    @media (max-width: 768px) {
+      .admin-modal-card {
+        grid-template-columns: 1fr;
+        padding: 1.5rem 1.25rem;
+        gap: 1.25rem;
+      }
+      .admin-modal-car-col {
+        display: none !important;
+      }
+    }
+    .admin-modal-car-col {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      height: 480px;
+      width: 100%;
+      background: #f1f5f9;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+    }
+    .admin-modal-car-col img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+    .admin-btn-indigo {
+      width: 100%;
+      padding: 0.875rem 1.25rem;
+      background-color: #4F46E5 !important;
+      color: #ffffff !important;
+      border-radius: 0.75rem;
+      font-size: 0.925rem;
+      font-weight: 600;
+      box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.35);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+    }
+    .admin-btn-indigo:hover {
+      background-color: #4338CA !important;
+      box-shadow: 0 12px 20px -3px rgba(79, 70, 229, 0.45);
+    }
   </style>
 </head>
 <body>
@@ -488,14 +578,14 @@ function renderLayout(opts) {
     <!-- Navbar -->
     <header id="navbar" class="fixed top-0 inset-x-0 z-50 transition-all duration-300 py-4">
       <div class="mx-auto max-w-7xl px-4">
-        <div id="navbar-inner" class="flex items-center justify-between rounded-full px-4 md:px-6 transition-all duration-300 bg-ink/40 backdrop-blur-md border border-white/10 h-16">
+        <div id="navbar-inner" class="flex items-center justify-between rounded-full px-4 md:px-6 transition-all duration-300 bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-lg shadow-slate-900/5 h-16">
           <a href="/" class="flex items-center gap-2 group">
-            <span class="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-yellow shadow-glow">
-              <span class="font-display font-bold text-ink">SMK</span>
+            <span class="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 shadow-md shadow-amber-300/40">
+              <span class="font-display font-extrabold text-slate-950 text-sm">SMK</span>
             </span>
-            <span class="hidden sm:flex flex-col leading-tight font-display navbar-logo-text text-white">
-              <span class="text-[13px] font-bold tracking-wide">SRI MUNIS KANNA</span>
-              <span class="text-[10px] uppercase tracking-[0.18em] text-yellow">Driving School &amp; Rentals</span>
+            <span class="hidden sm:flex flex-col leading-tight font-display navbar-logo-text">
+              <span class="text-[13px] font-extrabold tracking-wide text-slate-900">SRI MUNIS KANNA</span>
+              <span class="text-[10px] uppercase tracking-[0.18em] text-amber-600 font-bold">Driving School &amp; Rentals</span>
             </span>
           </a>
 
@@ -503,23 +593,25 @@ function renderLayout(opts) {
             ${navHtml}
           </nav>
 
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2.5">
             <div class="hidden md:flex flex-col items-end">
-              <a href="tel:${exports.SITE.phoneTel}" class="inline-flex items-center gap-1.5 text-sm font-semibold navbar-phone-text text-white">
-                ${icon('phone', 'size-3.5')} ${exports.SITE.phone}
+              <a href="tel:${exports.SITE.phoneTel}" class="inline-flex items-center gap-1.5 text-xs font-bold navbar-phone-text text-slate-900 hover:text-amber-600 transition-colors">
+                ${icon('phone', 'size-3 text-amber-500')} ${exports.SITE.phone}
               </a>
-              <a href="tel:${exports.SITE.phone2Tel}" class="text-xs font-medium opacity-80 hover:opacity-100 transition-opacity navbar-phone-text text-white">
+              <a href="tel:${exports.SITE.phone2Tel}" class="text-[11px] font-medium text-slate-500 hover:text-slate-800 transition-opacity">
                 ${exports.SITE.phone2}
               </a>
             </div>
-            <a href="/admin" data-admin-login class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold bg-white/15 text-white hover:bg-white/25 border border-white/25 transition-all shadow-sm cursor-pointer">
-              ${icon('shield-check', 'size-3.5 text-yellow')}
+            <a href="/admin" data-admin-login class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-sm cursor-pointer">
+              ${icon('shield-check', 'size-3.5 text-amber-400')}
               <span>Admin Portal</span>
             </a>
             <a href="/book-demo" class="hidden sm:block">
-              <button class="inline-flex items-center justify-center rounded-full px-4 py-1.5 text-sm font-semibold bg-gradient-yellow text-ink hover:opacity-90 transition-opacity">Book Demo</button>
+              <button class="inline-flex items-center justify-center rounded-full px-4 py-1.5 text-xs font-bold bg-gradient-to-r from-amber-400 via-amber-400 to-yellow-400 hover:from-amber-500 hover:to-yellow-500 text-slate-950 shadow-md shadow-amber-300/50 transition-all cursor-pointer">
+                Book Demo
+              </button>
             </a>
-            <button id="nav-toggle" class="lg:hidden rounded-full p-2 text-white hover:bg-white/10" aria-label="Toggle menu">
+            <button id="nav-toggle" class="lg:hidden rounded-full p-2 text-slate-800 hover:bg-slate-100" aria-label="Toggle menu">
               <span id="nav-icon-menu">${icon('menu', 'size-5')}</span>
               <span id="nav-icon-close" class="hidden">${icon('x', 'size-5')}</span>
             </button>
@@ -643,23 +735,23 @@ function renderLayout(opts) {
     </div>
 
     <!-- Interactive Admin Login Modal (Matching SMK Admin Box Design) -->
-    <div id="admin-login-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md transition-opacity">
-      <div class="relative w-full max-w-[880px] bg-white rounded-[28px] shadow-2xl p-4 sm:p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center text-slate-900 animate-fade-in max-h-[94vh] overflow-y-auto">
-        <button id="admin-modal-close" class="absolute top-4 right-4 z-20 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
+    <div id="admin-login-modal" class="hidden">
+      <div class="admin-modal-card">
+        <button id="admin-modal-close" class="absolute top-4 right-4 z-20 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer" aria-label="Close modal">
           ${icon('x', 'size-5')}
         </button>
 
         <!-- Left Column: Car Showcase Image Box -->
-        <div class="relative rounded-[20px] overflow-hidden h-[240px] sm:h-[340px] md:h-[500px] w-full bg-slate-100 shadow-sm hidden sm:block">
+        <div class="admin-modal-car-col">
           <img
             src="/assets/images/login-car.jpg"
+            onerror="if (!this.dataset.retried) { this.dataset.retried = '1'; this.src = '/admin/assets/images/login-car.jpg'; }"
             alt="SMK Driving School Yellow Sports Car"
-            class="w-full h-full object-cover object-center"
           />
         </div>
 
         <!-- Right Column: Sign In Form Box -->
-        <div class="flex flex-col justify-center px-1 sm:px-4 md:px-5 py-2">
+        <div class="flex flex-col justify-center px-1 py-2">
           
           <!-- SMK Logo & Header -->
           <div class="flex flex-col items-center text-center mb-6">
@@ -691,7 +783,7 @@ function renderLayout(opts) {
                   type="text"
                   id="admin-modal-user"
                   required
-                  class="w-full px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-xs text-[#0F172A] placeholder:text-[#CBD5E1] focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] focus:outline-none transition-colors pr-9 shadow-sm"
+                  class="admin-input-field pr-9"
                   placeholder="admin"
                 />
                 <span class="w-4 h-4 text-[#94A3B8] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -707,7 +799,7 @@ function renderLayout(opts) {
                   type="password"
                   id="admin-modal-pass"
                   required
-                  class="w-full px-3.5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-xs text-[#0F172A] placeholder:text-[#CBD5E1] focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] focus:outline-none transition-colors pr-9 shadow-sm tracking-wider"
+                  class="admin-input-field pr-9 tracking-wider"
                   placeholder="••••••••"
                 />
                 <button
@@ -733,7 +825,7 @@ function renderLayout(opts) {
             <button
               type="submit"
               id="admin-modal-submit"
-              class="w-full py-3.5 px-4 bg-[#4F46E5] hover:bg-[#4338CA] text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-200 hover:shadow-lg hover:shadow-indigo-300 transition-all flex items-center justify-center cursor-pointer disabled:opacity-70 mt-2"
+              class="admin-btn-indigo mt-2"
             >
               <span>Login</span>
             </button>
@@ -848,7 +940,7 @@ function renderLayout(opts) {
               errorDiv.textContent = data.message || 'Access Denied: Invalid username or password.';
               errorDiv.classList.remove('hidden');
               submitBtn.disabled = false;
-              submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="size-4 text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> <span>Sign In to Admin ERP</span>';
+              submitBtn.innerHTML = '<span>Login</span>';
             }
           } catch (err) {
             // Fallback check
@@ -865,7 +957,7 @@ function renderLayout(opts) {
               errorDiv.textContent = 'Access Denied: Invalid credentials.';
               errorDiv.classList.remove('hidden');
               submitBtn.disabled = false;
-              submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="size-4 text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> <span>Sign In to Admin ERP</span>';
+              submitBtn.innerHTML = '<span>Login</span>';
             }
           }
         });
