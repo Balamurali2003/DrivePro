@@ -4,8 +4,7 @@ node_modules/
 
 # Environment variables & secrets
 .env
-.env.local
-.env.*.local
+.env.*
 *.env
 
 # SQLite Databases & Backups
@@ -32,3 +31,7 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Archives & Staging
+*.zip.bak
+_hostinger_staging/

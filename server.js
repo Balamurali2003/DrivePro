@@ -9,7 +9,9 @@ const fs = require('fs');
 // Attempt to load .env from root or backend directory
 const envPaths = [
   path.join(__dirname, '.env'),
-  path.join(__dirname, 'backend/.env')
+  path.join(__dirname, '.env.production'),
+  path.join(__dirname, 'backend/.env'),
+  path.join(__dirname, 'backend/.env.production')
 ];
 for (const envPath of envPaths) {
   if (fs.existsSync(envPath)) {

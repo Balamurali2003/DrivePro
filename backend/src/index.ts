@@ -23,7 +23,7 @@ for (const envPath of potentialEnvPaths) {
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 // Trust reverse proxy headers (cPanel / Nginx / Passenger / Cloudflare)
 app.set('trust proxy', 1);
@@ -96,7 +96,7 @@ app.use('/', publicRouter);
 const server = http.createServer(app);
 initSocket(server);
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`====================================================`);
   console.log(` DrivePro CRM & ERP Backend running in ${process.env.NODE_ENV || 'production'} mode on port ${PORT}`);
   console.log(` Public Website: http://localhost:${PORT}/`);

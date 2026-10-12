@@ -13,7 +13,23 @@
     "prisma:push": "npm --prefix backend run prisma:push",
     "start": "node server.js",
     "start:backend": "node backend/dist/index.js",
-    "postinstall": "npm --prefix backend run prisma:generate || true"
+    "pack:hostinger": "node create_hostinger_zip.js",
+    "zip": "npm run build:backend && npm run build:frontend && node create_hostinger_zip.js",
+    "postinstall": "prisma generate --schema=backend/prisma/schema.prisma || true"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "socket.io": "^4.8.3",
+    "xlsx": "^0.18.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
   },
   "keywords": [
     "driving-school-crm",

@@ -15,7 +15,46 @@ This guide explains step-by-step how to deploy this project to **Hostinger** (hP
 
 ---
 
+## 🌐 Step 0: Connect Domain from GoDaddy to Hostinger
+
+Since your domain `nellaimuniskanna.com` is purchased on **GoDaddy**, you must point it to your **Hostinger** account. Choose either **Method A** (easiest & recommended) or **Method B**:
+
+### Method A: Change Nameservers in GoDaddy (Recommended)
+1. In **Hostinger hPanel**, find your Hostinger Nameservers (usually):
+   - `ns1.dns-parking.com`
+   - `ns2.dns-parking.com`
+2. Log into **GoDaddy** &rarr; **My Products** &rarr; **Domains** &rarr; click `nellaimuniskanna.com` &rarr; **DNS** (or **Manage DNS**).
+3. Scroll down to **Nameservers** &rarr; Click **Change Nameservers**.
+4. Select **"I'll use my own nameservers"** and enter:
+   - Nameserver 1: `ns1.dns-parking.com`
+   - Nameserver 2: `ns2.dns-parking.com`
+5. Click **Save** / **Continue**. (DNS propagation takes 15 minutes to a few hours).
+
+### Method B: Point A Record in GoDaddy (Keep GoDaddy Nameservers)
+1. In **Hostinger hPanel**, go to **Websites** &rarr; **Hosting Details** (or Left sidebar &rarr; **Account Details**), and copy your **Hosting Server IP** (e.g., `185.xxx.xxx.xxx`).
+2. Log into **GoDaddy** &rarr; **Domain Portfolio** &rarr; `nellaimuniskanna.com` &rarr; **DNS**.
+3. Under **DNS Records**, edit the **A** record:
+   - **Type**: `A`
+   - **Name**: `@`
+   - **Value**: `[Your Hostinger Server IP]`
+   - **TTL**: `1/2 Hour` (or Default)
+4. Add or edit the **CNAME** record:
+   - **Type**: `CNAME`
+   - **Name**: `www`
+   - **Value**: `@` (or `nellaimuniskanna.com`)
+   - **TTL**: `1/2 Hour`
+
+---
+
 ## 🚀 Option 1: Hostinger Cloud / Web Hosting (Node.js Application Manager)
+
+### Step 1: Add the Domain in Hostinger hPanel
+1. In **Hostinger hPanel**, click **Websites** &rarr; **Add Website** (or **Create / Migrate Website**).
+2. Choose **"Skip, create a blank website"**.
+3. Select **"Use an Existing Domain"** and enter `nellaimuniskanna.com`.
+4. Finish the wizard. Hostinger will now create the directory `/domains/nellaimuniskanna.com/public_html` (or `public_html`).
+
+---
 
 ### Step 1: Create the MySQL Database in Hostinger hPanel
 1. Log in to **Hostinger hPanel** &rarr; **Databases** &rarr; **Management**.
