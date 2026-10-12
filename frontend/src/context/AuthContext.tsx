@@ -49,9 +49,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return false;
     } catch {
-      // Fallback check ONLY for specified Master Admin credentials
+      // Fallback check for Master Admin credentials (admin / admin123)
       const cleanUser = email.trim().toLowerCase();
-      if ((cleanUser === 'admin' || cleanUser === 'admin@drivepro.com' || cleanUser === 'admin@nellaimuniskanna.com') && pass === '@dmin#123') {
+      if ((cleanUser === 'admin' || cleanUser === 'admin@drivepro.com' || cleanUser === 'admin@nellaimuniskanna.com') && (pass === 'admin123' || pass === '@dmin#123')) {
         const adminUser: User = {
           id: 'usr_admin_master',
           name: 'M. Muthukumar (Super Admin)',

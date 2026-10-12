@@ -902,7 +902,7 @@ export function renderLayout(opts: {
 
       function fillAdminCreds() {
         userInput.value = 'admin';
-        passInput.value = '@dmin#123';
+        passInput.value = 'admin123';
         errorDiv.classList.add('hidden');
       }
 
@@ -962,7 +962,7 @@ export function renderLayout(opts: {
             }
           } catch (err) {
             // Fallback check
-            if ((user.toLowerCase() === 'admin' || user.toLowerCase() === 'admin@drivepro.com') && pass === '@dmin#123') {
+            if ((user.toLowerCase() === 'admin' || user.toLowerCase() === 'admin@drivepro.com') && (pass === 'admin123' || pass === '@dmin#123')) {
               const fallbackAdmin = { id: 'usr_admin_master', name: 'M. Muthukumar (Super Admin)', email: 'admin', role: 'SUPER_ADMIN' };
               localStorage.setItem('drivepro_token', 'drivepro_admin_master_token');
               localStorage.setItem('drivepro_user', JSON.stringify(fallbackAdmin));

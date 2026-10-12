@@ -44,9 +44,9 @@ export const LoginPage: React.FC = () => {
 
   const handleRecover = () => {
     setUsername('admin');
-    setPassword('@dmin#123');
+    setPassword('admin123');
     setErrorMsg('');
-    toast.info('Admin credentials restored.');
+    toast.info('Admin credentials restored: admin / admin123');
   };
 
   return (

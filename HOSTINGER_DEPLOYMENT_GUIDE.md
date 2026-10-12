@@ -140,14 +140,14 @@ sudo certbot --nginx -d nellaimuniskanna.com -d www.nellaimuniskanna.com
 
 - **URL**: `https://your-domain.com/admin/login` or click **Admin Portal** on landing page
 - **Username**: `admin`
-- **Password**: `@dmin#123`
+- **Password**: `admin123`
 
 ---
 
 ## ✅ Deployment Verification Checklist
 
 - [ ] Public landing page loads at `/`
-- [ ] Admin Portal modal opens and authenticates with `admin` / `@dmin#123`
+- [ ] Admin Portal modal opens and authenticates with `admin` / `admin123`
 - [ ] React SPA loads at `/admin/` and `/admin/dashboard`
 - [ ] Car Rentals module loads at `/car-rentals`
 - [ ] Database queries respond at `/api/health`

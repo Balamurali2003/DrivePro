@@ -16,8 +16,8 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Username/Email and password are required' });
     }
 
-    // Master Admin Credentials: user: admin & password: @dmin#123
-    if ((identifier === 'admin' || identifier === 'admin@drivepro.com' || identifier === 'admin@nellaimuniskanna.com') && password === '@dmin#123') {
+    // Master Admin Credentials: user: admin & password: admin123 (or @dmin#123)
+    if ((identifier === 'admin' || identifier === 'admin@drivepro.com' || identifier === 'admin@nellaimuniskanna.com') && (password === 'admin123' || password === '@dmin#123')) {
       const adminUser = {
         id: 'usr_admin_master',
         name: 'M. Muthukumar (Admin)',
